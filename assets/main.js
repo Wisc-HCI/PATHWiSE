@@ -94,18 +94,22 @@
             var posTop = (e.originalEvent.clientY - pagesOffsetTop) + scrolledDistance;
             var posLeft = e.originalEvent.clientX - pagesOffsetLeft;
             var cText = $(elem).text().trim();
+            if ($(elem).hasClass('cn')) {
+                cText = '';
+            }
             init();
             if ($(elem).hasClass('cp')) {
                 var cID = $(elem).attr('id').trim();
                 $('.cp#' + cID).css('top', posTop);
                 $('.cp#' + cID).css('left', posLeft);
+                $('#comment-input textarea').attr('data-id', $(this).attr('id').trim());
             }
             if ($(elem).hasClass('cn') || $(elem).hasClass('ce')) {
                 $('#pages').append('<div id="' + commentPinCount + '" class="cp" draggable="true" style="top:' + posTop + 'px; left:' + posLeft + 'px;"><img src="assets/icons/comment-empty.png"><p>' + commentPinCount + '</p></div>');
-                if ($(elem).hasClass('ce')) {
-                    $('#comment-input textarea').val(cText);
-                }
+                $('.cp#' + commentPinCount).attr('data-comment', cText);
+                $('#comment-input textarea').val(cText);
                 $('#comment-input textarea').focus();
+                $('#comment-input textarea').attr('data-id', $(this).attr('id').trim());
                 commentPinCount++;
             }
             if ($(elem).hasClass('re')) {
@@ -117,6 +121,14 @@
                 $('.rp#' + rID).css('top', posTop);
                 $('.rp#' + rID).css('left', posLeft);
             }
+        });
+        $(document).on('click', '.cp', function() {
+            $('#comment-input textarea').attr('data-id', $(this).attr('id').trim());
+            $('#comment-input textarea').val($(this).attr('data-comment').trim());
+            $('#comment-input textarea').focus();
+        });
+        $(document).on('input', '#comment-input textarea', function() {
+            $('.cp#' + $(this).attr('data-id').trim()).attr('data-comment', $(this).val());
         });
         $(document).on('drop', '#comment-input textarea', function(e) {
             e.preventDefault();

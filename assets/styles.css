@@ -292,7 +292,7 @@ ul#comments-template li#create-new {
 
 #pages .cp>img,
 #pages .cp>p {
-    pointer-events: none;
+    /*pointer-events: none;*/
 }
 
 #pages .rp {
