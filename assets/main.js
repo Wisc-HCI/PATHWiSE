@@ -9,8 +9,10 @@
     var pagesOffsetLeft = $('#pages').offset().left;
     var scrolledDistance = 0;
     var emotionsList = ['Default', 'Happy', 'Questioning', 'Confused', 'Sad', 'Surprised', 'Attentive'];
+    var pins = [];
     var quickComments = [{
             'group': 'one',
+            'show_items': 1,
             'comments': [{
                     'text': `I'm, confused, can you explain what _______ means?`,
                     'emotion': 'Questioning'
@@ -23,6 +25,7 @@
         },
         {
             'group': 'two',
+            'show_items': 1,
             'comments': [{
                     'text': `That sounds incredible to me. Do you think _______ is always true?`,
                     'emotion': 'Questioning'
@@ -35,6 +38,7 @@
         },
         {
             'group': 'three',
+            'show_items': 1,
             'comments': [{
                     'text': `That's interesting, I think that _______ will happen next!`,
                     'emotion': 'Attentive'
@@ -105,6 +109,7 @@
         });
         $(document).on('click', '#selected-emotion > ul li', function() {
             var $this = $(this);
+            var emotionId = getEmotionId($(this).text().trim());
             $('#selected-emotion > ul li').removeClass('active');
             $this.addClass('active');
             $this.parents('#selected-emotion').children('p').text($(this).text().trim());
@@ -113,6 +118,11 @@
             setTimeout(function() {
                 $this.parents('#robot-emotions').attr('class', $this.text().trim().toLowerCase());
             }, 150);
+            if ($('.cp.focused').length == 1) {
+                $('.cp#' + $('.cp.focused').attr('id')).attr('data-emotion', emotionId);
+                $('#comments-list [data-id="' + $('.cp.focused').attr('id') + '"]').attr('data-emotion', emotionId);
+                managePin($('.cp.focused').attr('id'), 'updateEmotion', emotionId);
+            }
         });
         $('#editor').scroll(function() {
             scrolledDistance = parseInt($("#editor").scrollTop());
@@ -138,12 +148,28 @@
                 var cID = $(elem).attr('id').trim();
                 $(document).find('.cp#' + cID).css('top', posTop);
                 $(document).find('.cp#' + cID).css('left', posLeft);
-                $(document).find('.cp#' + cID).click();
+                $(document).find('.cp#' + cID + '>p').click();
             }
             if ($(elem).hasClass('cn') || $(elem).hasClass('ce')) {
-                $('#pages').append('<div data-emotion="' + cEmotion + '" data-comment="' + cText + '" id="c' + commentPinCount + '" class="cp" draggable="true" style="top:' + posTop + 'px; left:' + posLeft + 'px;"><p>' + commentPinCount + '</p></div>');
-                $(document).find('.cp#c' + commentPinCount).click();
+                $('#pages').append('<div data-emotion="' + cEmotion + '" data-comment="' + cText + '" id="c' + commentPinCount + '" class="cp" draggable="true" style="top:' + posTop + 'px; left:' + posLeft + 'px;"><p>' + commentPinCount + '</p><ul><li class="delete-pin">Delete</li><li class="duplicate-pin">Duplicate</li><li class="new-pin">Create New</li></ul></div>');
+                $(document).find('.cp#c' + commentPinCount + '>p').click();
+                $('#comments-list>ul').append('<li data-comment="' + cText + '" data-emotion="' + cEmotion + '" data-id="c' + commentPinCount + '"><span class="comment-id">' + commentPinCount + '</span><p>' + cText + '</p></li>');
+                var comment = {};
+                comment.text = cText;
+                comment.emotion = cEmotion;
+                comment.id = 'c' + commentPinCount;
+                pins.push(comment);
                 commentPinCount++;
+                if ($(elem).hasClass('cn')) {
+                    $('#comment-input textarea').attr('placeholder', '[Create your own comment]');
+                }
+                if ($(elem).hasClass('ce')) {
+                    var groupName = $(elem).attr('data-id').trim().split('-')[0];
+                    var currentCommentId = $(elem).attr('data-id').trim().split('-')[1];
+                    var latestCommentId = $('#comments-template [data-group="' + groupName + '"]').attr('data-latest').trim();
+                    $(document).find('#comments-template [data-id="' + groupName + '-' + currentCommentId + '"]').remove();
+                    getNextComment(groupName, latestCommentId);
+                }
             }
             if ($(elem).hasClass('re')) {
                 $('#pages').append('<div id="r' + redactPinCount + '" class="rp" draggable="true" style="top:' + posTop + 'px; left:' + posLeft + 'px;"></div>');
@@ -155,19 +181,62 @@
                 $(document).find('.rp#' + rID).css('left', posLeft);
             }
         });
-        $(document).on('click', '.cp', function() {
-            $('.cp').removeClass('focused');
-            $(this).addClass('focused');
-            $(document).find('#selected-emotion > ul li:nth-child(' + $(this).attr('data-emotion').trim() + ')').click();
-            $('#comment-input textarea').attr('data-id', $(this).attr('id').trim());
-            $('#comment-input textarea').val($(this).attr('data-comment').trim());
-            $('#comment-input textarea').focus();
-        });
-        $(document).on('input', '#comment-input textarea', function() {
-            $('.cp#' + $(this).attr('data-id').trim()).attr('data-comment', $(this).val());
-        });
         $(document).on('drop', '#comment-input textarea', function(e) {
             e.preventDefault();
+        });
+        $(document).on('click', '.cp>p', function() {
+            var $this = $(this).parent();
+            $('.cp').removeClass('focused');
+            $($this).addClass('focused');
+            $(document).find('#selected-emotion > ul li[data-id="' + $($this).attr('data-emotion').trim() + '"]').click();
+            $('#comment-input textarea').val($($this).attr('data-comment').trim());
+            $('#comment-input textarea').focus();
+        });
+        $(document).on('click', '#comments-list ul li', function() {
+            $(document).find('.cp#' + $(this).attr('data-id') + '>p').click();
+            $('#editor').animate({ scrollTop: $('#editor').offset().top + parseInt($('.cp#' + $(this).attr('data-id')).css('top'), 10) - 200 }); // 200 = 116(height from body top to pages/editor top is 116) + 84(scroll to 84px above the pin)
+        });
+        $(document).on('input', '#comment-input textarea', function() {
+            if ($('.cp.focused').length == 1) {
+                $('.cp#' + $('.cp.focused').attr('id')).attr('data-comment', $(this).val());
+                $('#comments-list [data-id="' + $('.cp.focused').attr('id') + '"]').attr('data-comment', $(this).val());
+                $('#comments-list [data-id="' + $('.cp.focused').attr('id') + '"] > p').text($(this).val());
+                managePin($('.cp.focused').attr('id'), 'updateComment', $(this).val());
+            }
+        });
+        $(document).on('click', '.delete-pin', function() {
+            managePin($(this).parents('.cp').attr('id'), 'delete');
+            $('#comments-list li[data-id="' + $(this).parents('.cp').attr('id') + '"]').remove();
+            $(this).parents('.cp').remove();
+        });
+        $(document).on('click', '.duplicate-pin, .new-pin', function() {
+            var target = $(document).find('.cp#' + $(this).parents('.cp').attr('id'));
+            var posTop = parseInt(target.css('top'), 10);
+            var posLeft = parseInt(target.css('left'), 10);
+            var cText = target.attr('data-comment');
+            var cEmotion = target.attr('data-emotion');
+            var editorHeieght = $('#editor').height();
+            if ($(this).hasClass('new-pin')) {
+                cText = '';
+                cEmotion = 0;
+            }
+            if ((posTop + 50) >= editorHeieght) {
+                posTop -= 50;
+            } else {
+                posTop += 50;
+            }
+            $('#pages').append('<div data-emotion="' + cEmotion + '" data-comment="' + cText + '" id="c' + commentPinCount + '" class="cp" draggable="true" style="top:' + posTop + 'px; left:' + posLeft + 'px;"><p>' + commentPinCount + '</p><ul><li class="delete-pin">Delete</li><li class="duplicate-pin">Duplicate</li><li class="new-pin">Create New</li></ul></div>');
+            $(document).find('.cp#c' + commentPinCount + '>p').click();
+            $('#comments-list>ul').append('<li data-comment="' + cText + '" data-emotion="' + cEmotion + '" data-id="c' + commentPinCount + '"><span class="comment-id">' + commentPinCount + '</span><p>' + cText + '</p></li>');
+            var comment = {};
+            comment.text = cText;
+            comment.emotion = cEmotion;
+            comment.id = 'c' + commentPinCount;
+            pins.push(comment);
+            commentPinCount++;
+        });
+        $(document).on('click', '#save-btn', function() {
+            console.log(pins);
         });
     });
 
@@ -177,10 +246,15 @@
             $('#selected-emotion>ul').append('<li' + (i == 0 ? ' class="active"' : '') + ' data-id="' + i + '">' + v + '</li>');
         });
         $.each(quickComments, function(i, v) {
-            console.log(i, v);
-            elem += '<ul data-group="' + v.group + '" data-current="0">';
+            elem += '<ul data-group="' + v.group + '" data-latest="0">';
+            var counter = 0;
             $.each(v.comments, function(ci, cv) {
-                elem += '<li class="ce" draggable="true" data-emotion="' + getEmotionId(cv.emotion) + '">' + cv.text + '</li>';
+                if (counter < v.show_items) {
+                    elem += '<li class="ce" data-id="' + v.group + '-' + ci + '" draggable="true" data-emotion="' + getEmotionId(cv.emotion) + '">' + cv.text + '</li>';
+                    counter++;
+                } else {
+                    return false;
+                }
             });
             elem += '</ul>';
         });
@@ -198,14 +272,45 @@
         $('#comment-input textarea').val('');
     }
 
+    function managePin(id, action, value) {
+        $.each(pins, function(i, v) {
+            if (v.id == id) {
+                if (action == 'updateComment') {
+                    v.text = value;
+                }
+                if (action == 'updateEmotion') {
+                    v.emotion = value;
+                }
+                if (action == 'delete') {
+                    pins.splice(i, 1);
+                }
+                return false;
+            }
+        });
+    }
+
     function getEmotionId(emotion) {
         var id = 0;
-        $.each(emotionsList, function(i, v){
+        $.each(emotionsList, function(i, v) {
             if (emotion == v) {
                 id = i;
             }
         });
         return id;
+    }
+
+    function getNextComment(groupName, latestCommentId) {
+        $.each(quickComments, function(i, v) {
+            if (v.group.trim() == groupName.trim()) {
+                latestCommentId++;
+                if (latestCommentId >= v.comments.length) {
+                    latestCommentId = 0;
+                }
+                var cv = v.comments[latestCommentId];
+                $('#comments-template [data-group="' + groupName + '"]').append('<li class="ce" data-id="' + v.group + '-' + latestCommentId + '" draggable="true" data-emotion="' + getEmotionId(cv.emotion) + '">' + cv.text + '</li>');
+                $('#comments-template [data-group="' + groupName + '"]').attr('data-latest', latestCommentId);
+            }
+        });
     }
 
     function updateStudents(classID, groupID) {

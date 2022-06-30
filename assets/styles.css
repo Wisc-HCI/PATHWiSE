@@ -88,6 +88,25 @@ nav>.container>ul>li>span {
     line-height: 13px;
 }
 
+#nav-right {
+    display: flex;
+}
+
+#save-btn {
+    width: 95px;
+    height: 25px;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    line-height: 25px;
+    font-size: 16px;
+    margin-right: 15px;
+    border-radius: 7px;
+    background: #a6ce39;
+    letter-spacing: 1px;
+    cursor: pointer;
+}
+
 #brand {
     color: white;
     font-size: 25px;
@@ -109,9 +128,9 @@ main>.container {
 
 #comments-column {
     height: 100%;
-    width: 230px;
-    min-width: 230px;
-    max-width: 230px;
+    width: 250px;
+    min-width: 250px;
+    max-width: 250px;
     overflow-y: auto;
 }
 
@@ -160,7 +179,7 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
 }
 
 #comments-template>ul>li {
-    background-color: #bfbfbf;
+    background-color: white; /*#bfbfbf*/
     padding: 20px;
     border-radius: 10px;
     cursor: move;
@@ -184,33 +203,31 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
     background-position: center;
     height: 20px;
     background-size: 65px;
+    background-image: url('icons/bubble-corner.png');
 }
 
-#comments-template>ul>li:not(#create-new)::after {
+/*#comments-template>ul>li:not(#create-new)::after {
     background-image: url('icons/bubble-corner-gray.png');
 }
 
 #comments-template>ul>li#create-new::after {
     background-image: url('icons/bubble-corner.png');
-}
+}*/
 
-#comments-template>ul>li#create-new {
+/*#comments-template>ul>li#create-new {
     background-color: white;
-}
+}*/
 
 #comments-list {
     background-color: #bfbfbf;
-    padding: 20px 10px 20px 20px;
-}
-
-#comments-list ul {
-    padding-left: 25px;
-    list-style: decimal;
+    padding: 20px 10px;
 }
 
 #comments-list ul li {
     position: relative;
-    counter-increment: step-counter;
+    padding-left: 45px;
+    min-height: 25px;
+    cursor: pointer;
 }
 
 #comments-list ul li:not(:last-child) {
@@ -218,26 +235,45 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
 }
 
 #comments-list ul li::before {
-    width: 30px;
+    width: 40px;
     height: 30px;
     position: absolute;
     top: 0;
-    left: -35px;
-    content: counter(step-counter);
-    background-image: url('icons/comment-empty.png');
+    left: 0;
+    content: '';
     background-repeat: no-repeat;
     background-position: top left;
-    background-size: 30px;
+    background-size: 39px;
+    z-index: 1;
+}
+
+#comments-list ul li:not(.active)::before {
+    background-image: url('icons/comment-empty.png');
+}
+
+#comments-list ul li.active::before {
+    background-image: url('icons/comment-empty-active.png');
+}
+
+#comments-list ul li>span {
+    width: 36px;
+    height: 26px;
+    position: absolute;
+    top: 0;
+    left: 0;
     text-align: center;
     font-size: 15px;
-    line-height: 20px;
+    line-height: 24px;
     color: #3f9daf;
+    z-index: 2;
+    padding-left: 10px;
+    font-weight: bold;
 }
 
 #main-content-wrapper {
-    width: calc(100% - 460px);
-    min-width: calc(100% - 460px);
-    max-width: calc(100% - 460px);
+    width: calc(100% - 480px);
+    min-width: calc(100% - 480px);
+    max-width: calc(100% - 480px);
     height: 100%;
     background-color: #bfbfbf;
     padding: 0 10px;
@@ -358,6 +394,52 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
 
 #pages .cp.focused>p {
     color: #457ab1;
+}
+
+#pages .cp:not(:hover)>ul {
+    display: none;
+}
+
+#pages .cp>ul {
+    display: flex;
+    justify-content: space-between;
+    background-color: white;
+    position: absolute;
+    top: 5px;
+    left: 60px;
+    width: 95px;
+    height: 31px;
+    cursor: default;
+    border: 1px solid black;
+    padding: 2px 5px;
+    border-radius: 4px;
+}
+
+#pages .cp>ul>li {
+    width: 25px;
+    height: 25px;
+    text-indent: -99999px;
+    overflow: hidden;
+    cursor: pointer;
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 16px;
+}
+
+#pages .cp>ul>li:not(:hover) {
+    opacity: 0.6;
+}
+
+#pages .cp>ul>li.delete-pin {
+    background-image: url('icons/delete-pin.png');
+}
+
+#pages .cp>ul>li.duplicate-pin {
+    background-image: url('icons/duplicate-pin.png');
+}
+
+#pages .cp>ul>li.new-pin {
+    background-image: url('icons/new-pin.png');
 }
 
 #tools {
