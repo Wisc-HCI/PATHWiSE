@@ -15,6 +15,20 @@ body {
     background-color: #595959;
 }
 
+.temporary-disabled {
+    cursor: not-allowed !important;
+    pointer-events: none;
+    opacity: 0.4;
+}
+
+#temporary-menu a {
+    color: #aaaaaa;
+}
+
+#temporary-menu a:hover {
+    color: #fff;
+}
+
 a {
     text-decoration: none;
 }
@@ -179,7 +193,8 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
 }
 
 #comments-template>ul>li {
-    background-color: white; /*#bfbfbf*/
+    background-color: white;
+    /*#bfbfbf*/
     padding: 20px;
     border-radius: 10px;
     cursor: move;
@@ -328,16 +343,6 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
     position: relative;
 }
 
-#editor-body>canvas {
-    display: none;
-    position: absolute;
-    z-index: 2;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-}
-
 .pages>img {
     width: 100%;
 }
@@ -379,6 +384,9 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
 
 #pages .rp {
     z-index: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #pages .cp>p {
@@ -396,18 +404,16 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
     color: #457ab1;
 }
 
-#pages .cp:not(:hover)>ul {
+#pages .cp:not(:hover)>ul,
+#pages .rp:not(:hover)>ul {
     display: none;
 }
 
-#pages .cp>ul {
+#pages .cp>ul,
+#pages .rp>ul {
     display: flex;
     justify-content: space-between;
     background-color: white;
-    position: absolute;
-    top: 5px;
-    left: 60px;
-    width: 95px;
     height: 31px;
     cursor: default;
     border: 1px solid black;
@@ -415,7 +421,26 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
     border-radius: 4px;
 }
 
-#pages .cp>ul>li {
+#pages .cp>ul {
+    position: absolute;
+    width: 95px;
+    top: 5px;
+}
+
+#pages .rp>ul {
+    width: 65px;
+}
+
+#pages .cp:not(.edged)>ul {
+    left: 60px;
+}
+
+#pages .cp.edged>ul {
+    left: -95px;
+}
+
+#pages .cp>ul>li,
+#pages .rp>ul>li {
     width: 25px;
     height: 25px;
     text-indent: -99999px;
@@ -426,15 +451,18 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
     background-size: 16px;
 }
 
-#pages .cp>ul>li:not(:hover) {
+#pages .cp>ul>li:not(:hover),
+#pages .rp>ul>li:not(:hover) {
     opacity: 0.6;
 }
 
-#pages .cp>ul>li.delete-pin {
+#pages .cp>ul>li.delete-pin,
+#pages .rp>ul>li.delete-redactor {
     background-image: url('icons/delete-pin.png');
 }
 
-#pages .cp>ul>li.duplicate-pin {
+#pages .cp>ul>li.duplicate-pin,
+#pages .rp>ul>li.duplicate-redactor {
     background-image: url('icons/duplicate-pin.png');
 }
 

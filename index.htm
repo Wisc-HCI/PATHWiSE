@@ -4,18 +4,24 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Pathwise</title>
+    <title>Pathwise - Building Green</title>
     <link rel="stylesheet" type="text/css" href="assets/styles.css">
     <link rel="icon" type="image/x-icon" href="assets/icons/favicon.png">
 </head>
 
-<body>
+<body data-version="1">
     <nav id="primary-nav">
         <div class="container">
             <ul>
                 <li>Assignment manager<span>> Article editor</span></li>
                 <!-- <li>Comment manager</li>
                 <li>Classes & groups</li> -->
+            </ul>
+            <ul id="temporary-menu">
+                <li>Sample 1</li>
+                <li><a href="index2.htm">Sample 2</a></li>
+                <li><a href="index3.htm">Sample 3</a></li>
+                <li><a href="index4.htm">Sample 4</a></li>
             </ul>
             <div id="nav-right">
                 <button id="save-btn">Save</button>
@@ -41,7 +47,7 @@
             </div>
             <div id="main-content-wrapper">
                 <div id="meta-data">
-                    <p id="assignment-title">When did Bison arrive in North America</p>
+                    <p id="assignment-title">Building Green</p>
                     <ul id="assignment-details">
                         <li>Level: 1</li>
                         <li>Assigned: [date]</li>
@@ -58,60 +64,42 @@
                                 <img src="assets/icons/redact.png" class="re" draggable="true">
                             </li>
                         </ul>
-                        <ul class="secondary-tools">
+                        <!-- <ul class="secondary-tools">
                             <li class="zoom-in-btn"></li>
                             <li class="zoom-out-btn"></li>
-                        </ul>
+                        </ul> -->
                     </div>
                     <div id="editor">
                         <div id="editor-body">
-                            <canvas></canvas>
                             <div id="pages">
                                 <div id="page-1" class="page">
-                                    <img src="assets/images/sample1/page-1.jpg">
+                                    <img src="assets/images/1/0001.jpg">
                                 </div>
                                 <div id="page-2" class="page">
-                                    <img src="assets/images/sample1/page-2.jpg">
+                                    <img src="assets/images/1/0002.jpg">
                                 </div>
                                 <div id="page-3" class="page">
-                                    <img src="assets/images/sample1/page-3.jpg">
+                                    <img src="assets/images/1/0003.jpg">
                                 </div>
                                 <div id="page-4" class="page">
-                                    <img src="assets/images/sample1/page-4.jpg">
+                                    <img src="assets/images/1/0004.jpg">
+                                </div>
+                                <div id="page-5" class="page">
+                                    <img src="assets/images/1/0005.jpg">
+                                </div>
+                                <div id="page-6" class="page">
+                                    <img src="assets/images/1/0006.jpg">
+                                </div>
+                                <div id="page-7" class="page">
+                                    <img src="assets/images/1/0007.jpg">
                                 </div>
                             </div>
-                            <!-- <div id="pages">
-                            <div id="page-1" class="page">
-                                <img src="assets/images/sample2/0001.jpg">
-                            </div>
-                            <div id="page-2" class="page">
-                                <img src="assets/images/sample2/0002.jpg">
-                            </div>
-                            <div id="page-3" class="page">
-                                <img src="assets/images/sample2/0003.jpg">
-                            </div>
-                            <div id="page-4" class="page">
-                                <img src="assets/images/sample2/0004.jpg">
-                            </div>
-                            <div id="page-5" class="page">
-                                <img src="assets/images/sample2/0005.jpg">
-                            </div>
-                            <div id="page-6" class="page">
-                                <img src="assets/images/sample2/0006.jpg">
-                            </div>
-                            <div id="page-7" class="page">
-                                <img src="assets/images/sample2/0007.jpg">
-                            </div>
-                            <div id="page-8" class="page">
-                                <img src="assets/images/sample2/0008.jpg">
-                            </div>
-                        </div> -->
                         </div>
                     </div>
                 </div>
             </div>
             <div id="robot-column">
-                <div id="audiences" data-toggler="0" data-class="a" data-group="0">
+                <div class="temporary-disabled" id="audiences" data-toggler="0" data-class="a" data-group="0">
                     <p>Group: <span>Everyone</span></p>
                     <ul class="audience-groups">
                         <li class="active" data-id="0">Everyone</li>
