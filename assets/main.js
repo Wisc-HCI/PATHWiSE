@@ -363,6 +363,11 @@
             $($this).addClass('focused');
             $(document).find('#selected-emotion > ul li[data-id="' + $($this).attr('data-emotion').trim() + '"]').click();
             $('#comment-input textarea').val($($this).attr('data-comment').trim());
+            if ($($this).attr('data-comment').trim() == '') {
+                $('#comment-input[data-play]').removeAttr('data-play');
+            } else {
+                $('#comment-input').attr('data-play', 1);
+            }
             $('#comment-input textarea').focus();
         });
         $(document).on('click', '#comments-list ul li', function() {
@@ -375,6 +380,11 @@
                 $('#comments-list [data-id="' + $('.cp.focused').attr('id') + '"]').attr('data-comment', $(this).val());
                 $('#comments-list [data-id="' + $('.cp.focused').attr('id') + '"] > p').text($(this).val());
                 managePin($('.cp.focused').attr('id'), 'updateComment', $(this).val());
+            }
+            if ($(this).val().trim() == '') {
+                $('#comment-input[data-play]').removeAttr('data-play');
+            } else {
+                $('#comment-input').attr('data-play', 1);
             }
         });
         $(document).on('click', '.delete-pin', function() {
@@ -419,6 +429,9 @@
             }
             $('#pages').append('<div id="r' + redactPinCount + '" class="rp" draggable="true" style="top:' + posTop + 'px; left:' + posLeft + 'px;"><ul><li class="delete-redactor">Delete</li><li class="duplicate-redactor">Duplicate</li></ul></div>');
             redactPinCount++;
+        });
+        $(document).on('click', '#comment-input[data-play="1"] #play', function() {
+            window.speechSynthesis.speak(new SpeechSynthesisUtterance($(this).parent().children('textarea').val().trim()));
         });
         $(document).on('click', '#save-btn', function() {
             // var url = '/validate/',
@@ -489,6 +502,7 @@
         $(document).find('#selected-emotion > ul li:first-child').click();
         $('#selected-emotion').attr('data-toggler', '0');
         $('#comment-input textarea').val('');
+        $('#comment-input[data-play]').removeAttr('data-play');
     }
 
     function managePin(id, action, value) {
