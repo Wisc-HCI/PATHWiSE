@@ -427,11 +427,11 @@
             } else {
                 posTop += 110;
             }
-            $('#pages').append('<div id="r' + redactPinCount + '" class="rp" draggable="true" style="top:' + posTop + 'px; left:' + posLeft + 'px;"><ul><li class="delete-redactor">Delete</li><li class="duplicate-redactor">Duplicate</li></ul></div>');
+            $('#pages').append('<div id="r' + redactPinCount + '" class="rp" draggable="true" style="top:' + posTop + 'px; left:' + posLeft + 'px;"><ul><li class="delete-redactor">Delete</li><li class="duplicate-redactor">Duplicate</li><li class="duplicate-redactor">Duplicate</li></ul></div>');
             redactPinCount++;
         });
         $(document).on('click', '#comment-input[data-play="1"] #play', function() {
-            window.speechSynthesis.speak(new SpeechSynthesisUtterance($(this).parent().children('textarea').val().trim()));
+            say($(this).parent().children('textarea').val().trim());
         });
         $(document).on('click', '#save-btn', function() {
             // var url = '/validate/',
@@ -503,6 +503,19 @@
         $('#selected-emotion').attr('data-toggler', '0');
         $('#comment-input textarea').val('');
         $('#comment-input[data-play]').removeAttr('data-play');
+    }
+
+    function say(m) {
+        var msg = new SpeechSynthesisUtterance();
+        var voices = window.speechSynthesis.getVoices();
+        msg.voice = voices[1];
+        msg.voiceURI = "native";
+        msg.volume = 1;
+        msg.rate = 0.9;
+        msg.pitch = 1.4;
+        msg.text = m;
+        msg.lang = 'en-US';
+        speechSynthesis.speak(msg);
     }
 
     function managePin(id, action, value) {
