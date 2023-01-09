@@ -10,7 +10,7 @@
 </head>
 
 <body data-version="1">
-    <nav id="primary-nav">
+    <nav id="primary-nav"> <!-- Navigation -->
         <div class="container">
             <ul>
                 <li>Assignment manager<span>> Article editor</span></li>
@@ -32,18 +32,18 @@
     <main data-comments="1" data-comments-toggle="1">
         <div class="container">
             <div id="comments-column" class="utilities">
-                <ul id="comments-column-toggler" data-toggler="1">
+                <ul id="comments-column-toggler" data-toggler="1"> <!-- left sidebar toggle tabs -->
                     <li class="comments-template-toggle">Quick comments</li>
                     <li class="comments-list-toggle">Existing comments</li>
                 </ul>
-                <div id="comments-list">
+                <div id="comments-list"> <!-- left sidebar toggle contents -->
                     <ul></ul>
                 </div>
-                <div id="comments-template">
+                <div id="comments-template"> <!-- left sidebar toggle contents -->
                     <ul>
                         <li class="cn" id="create-new" draggable="true" data-emotion="0">[Create your own comment]</li>
                     </ul>
-                </div>
+                </div> <!-- left sidebar -->
             </div>
             <div id="main-content-wrapper">
                 <div id="meta-data">
@@ -69,7 +69,7 @@
                             <li class="zoom-out-btn"></li>
                         </ul> -->
                     </div>
-                    <div id="editor">
+                    <div id="editor"> <!-- Editable area, allows drop -->
                         <div id="editor-body">
                             <div id="pages">
                                 <div id="page-1" class="page">
@@ -96,9 +96,9 @@
                             </div>
                         </div>
                     </div>
-                </div>
+                </div> <!-- main content -->
             </div>
-            <div id="robot-column">
+            <div id="robot-column"> <!-- right sidebar -->
                 <div class="temporary-disabled" id="audiences" data-toggler="0" data-class="a" data-group="0">
                     <p>Group: <span>Everyone</span></p>
                     <ul class="audience-groups">
@@ -151,7 +151,7 @@
                         </ul>
                     </div>
                 </div>
-                <div id="add-comment">
+                <div id="add-comment"> <!-- add comment section with the robot -->
                     <div id="comment-input">
                         <textarea placeholder='"Be sure to take a good look at this part!"'></textarea>
                         <button id="play">Play</button>
@@ -159,7 +159,7 @@
                     <div id="robot-emotions" class="default">
                         <div id="selected-emotion" data-toggler="0">
                             <p>Default</p>
-                            <ul></ul>
+                            <ul></ul> <!-- list of emotions generated from the data json -->
                         </div>
                     </div>
                 </div>

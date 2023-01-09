@@ -52,7 +52,7 @@
     //         ]
     //     }
     // ];
-    var quickComments = [{
+    var quickComments = [{ // comment library
             'group': 'student-summary',
             'show_items': 1,
             'comments': [{
@@ -456,7 +456,7 @@
         });
     });
 
-    function submitToGoogleForm(pins, redactors, meta) {
+    function submitToGoogleForm(pins, redactors, meta) { // save comment pins with their related comments and emotions etc
         var formid = "e/1FAIpQLScKuIrXyra1lh8Xxt74vbJ9cRr2WfERS8Ho6aQdtSwyA80tYg";
         var data = {
             "entry.2032535083": pins,
@@ -472,7 +472,7 @@
             "/formResponse?" + params.join("&");
     }
 
-    function preInit() {
+    function preInit() { // initializes all the default htmls from json objs
         var elem = '';
         $.each(emotionsList, function(i, v) {
             $('#selected-emotion>ul').append('<li' + (i == 0 ? ' class="active"' : '') + ' data-id="' + i + '">' + v + '</li>');
@@ -495,7 +495,7 @@
         }
     }
 
-    function init() {
+    function init() { // initializes all the default values for auto genrated lists like comments librarry, emotions list, students etc
         $('.audience-groups li:first-child').click();
         $('.audience-class > ul li:first-child').click();
         $('#audiences').attr('data-toggler', '0');
@@ -505,7 +505,7 @@
         $('#comment-input[data-play]').removeAttr('data-play');
     }
 
-    function say(m) {
+    function say(m) { // create and play audio demos for comments to create 
         var msg = new SpeechSynthesisUtterance();
         var voices = window.speechSynthesis.getVoices();
         msg.voice = voices[1];
@@ -518,7 +518,7 @@
         speechSynthesis.speak(msg);
     }
 
-    function managePin(id, action, value) {
+    function managePin(id, action, value) { // update contents: messages, pin number, emotion etc for each selected comment pins
         $.each(pins, function(i, v) {
             if (v.id == id) {
                 if (action == 'updateComment') {
@@ -535,7 +535,7 @@
         });
     }
 
-    function getEmotionId(emotion) {
+    function getEmotionId(emotion) { // returns the order of the emotion in the json obj of emotions
         var id = 0;
         $.each(emotionsList, function(i, v) {
             if (emotion == v) {
@@ -545,7 +545,7 @@
         return id;
     }
 
-    function getNextComment(groupName, latestCommentId) {
+    function getNextComment(groupName, latestCommentId) { // return the next available comment from a comment group to replace the comment template that has just been dragged onto the editor from the sidebar
         $.each(quickComments, function(i, v) {
             if (v.group.trim() == groupName.trim()) {
                 latestCommentId++;
@@ -559,7 +559,7 @@
         });
     }
 
-    function sortComments(id) {
+    function sortComments(id) { // updates the order of the newly created pin comments in the sidebar as per their position in the editor
         var length = $('#comments-list>ul>li').length;
         if (length > 1) {
             var target = $('#comments-list>ul>li[data-id="' + id + '"]').detach();
@@ -590,7 +590,7 @@
         }
     }
 
-    function updateStudents(classID, groupID) {
+    function updateStudents(classID, groupID) { // generate students list from the json
         $('.audience-students li').removeClass('selected');
         if (groupID != 4) {
             var studentsList = classID + groupID;
@@ -604,7 +604,7 @@
         }
     }
 
-    function save() {
+    function save() { // saves data i.e. comments and emotion, updates values needed to do calculation 
         pins = [];
         redactors = [];
         $.each($('#comments-list > ul > li'), function() {
