@@ -192,6 +192,28 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
     cursor: default;
 }
 
+#comments-category {
+  
+}
+
+#comments-category li {
+  padding: 2px 12px;
+  background-color: #bfbfbf;
+  border-radius: 3px;
+  margin-right: 10px;
+  margin-bottom: 15px;
+  display: inline-block;
+}
+
+#comments-category li:not(.active) {
+  cursor: pointer;
+}
+
+#comments-category li:hover,
+#comments-category li.active {
+    background-color: #fff !important;
+}
+
 #comments-template>ul>li {
     background-color: white;
     /*#bfbfbf*/
@@ -514,6 +536,34 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
 
 .redact-btn {
     height: 24px;
+}
+
+.refresh-btn {
+    padding: 1px;
+    cursor: pointer !important;
+}
+
+.refresh-btn.active {
+    cursor: not-allowed !important;
+    pointer-events: none;
+    animation-name: spin;
+    animation-duration: 1000ms;
+    animation-iteration-count: infinite;
+    animation-timing-function: linear;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.refresh-btn svg {
+    fill: #424242;
 }
 
 .zoom-in-btn {
