@@ -10,7 +10,8 @@
 </head>
 
 <body data-version="1">
-    <nav id="primary-nav"> <!-- Navigation -->
+    <nav id="primary-nav">
+        <!-- Navigation -->
         <div class="container">
             <ul>
                 <li>Assignment manager<span>> Article editor</span></li>
@@ -32,18 +33,24 @@
     <main data-comments="1" data-comments-toggle="1">
         <div class="container">
             <div id="comments-column" class="utilities">
-                <ul id="comments-column-toggler" data-toggler="1"> <!-- left sidebar toggle tabs -->
+                <ul id="comments-column-toggler" data-toggler="1">
+                    <!-- left sidebar toggle tabs -->
                     <li class="comments-template-toggle">Quick comments</li>
                     <li class="comments-list-toggle">Existing comments</li>
                 </ul>
-                <ul id="comments-category">
-                    <li class="active">All</li>
-                </ul>
-                <div id="comments-list"> <!-- left sidebar toggle contents -->
+                <div id="comments-category">
+                    <p>Category Selected: <span>All</span></p>
+                    <ul>
+                        <li id="comments-category-all" class="active">All</li>
+                    </ul>
+                </div>
+                <div id="comments-list">
+                    <!-- left sidebar toggle contents -->
                     <ul></ul>
                 </div>
-                <div id="comments-template"> <!-- left sidebar toggle contents -->
-                    <ul>
+                <div id="comments-template">
+                    <!-- left sidebar toggle contents -->
+                    <ul id="comments-template-new">
                         <li class="cn" id="create-new" draggable="true" data-emotion="0">[Create your own comment]</li>
                     </ul>
                 </div> <!-- left sidebar -->
@@ -61,8 +68,15 @@
                     <div id="tools">
                         <ul>
                             <li class="refresh-btn">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path d="M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8c62.5-62.5 163.8-62.5 226.3 0L386.3 160H336c-17.7 0-32 14.3-32 32s14.3 32 32 32H463.5c0 0 0 0 0 0h.4c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32s-32 14.3-32 32v51.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5zM39 289.3c-5 1.5-9.8 4.2-13.7 8.2c-4 4-6.7 8.8-8.1 14c-.3 1.2-.6 2.5-.8 3.8c-.3 1.7-.4 3.4-.4 5.1V448c0 17.7 14.3 32 32 32s32-14.3 32-32V396.9l17.6 17.5 0 0c87.5 87.4 229.3 87.4 316.7 0c24.4-24.4 42.1-53.1 52.9-83.7c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.5 62.5-163.8 62.5-226.3 0l-.1-.1L125.6 352H176c17.7 0 32-14.3 32-32s-14.3-32-32-32H48.4c-1.6 0-3.2 .1-4.8 .3s-3.1 .5-4.6 1z"/></svg>
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                                    <!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. -->
+                                    <path d="M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8c62.5-62.5 163.8-62.5 226.3 0L386.3 160H336c-17.7 0-32 14.3-32 32s14.3 32 32 32H463.5c0 0 0 0 0 0h.4c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32s-32 14.3-32 32v51.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5zM39 289.3c-5 1.5-9.8 4.2-13.7 8.2c-4 4-6.7 8.8-8.1 14c-.3 1.2-.6 2.5-.8 3.8c-.3 1.7-.4 3.4-.4 5.1V448c0 17.7 14.3 32 32 32s32-14.3 32-32V396.9l17.6 17.5 0 0c87.5 87.4 229.3 87.4 316.7 0c24.4-24.4 42.1-53.1 52.9-83.7c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.5 62.5-163.8 62.5-226.3 0l-.1-.1L125.6 352H176c17.7 0 32-14.3 32-32s-14.3-32-32-32H48.4c-1.6 0-3.2 .1-4.8 .3s-3.1 .5-4.6 1z" /></svg>
                             </li>
+                            <!-- <li class="refresh-ai-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+                                    Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc.
+                                    <path d="M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8c62.5-62.5 163.8-62.5 226.3 0L386.3 160H336c-17.7 0-32 14.3-32 32s14.3 32 32 32H463.5c0 0 0 0 0 0h.4c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32s-32 14.3-32 32v51.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5zM39 289.3c-5 1.5-9.8 4.2-13.7 8.2c-4 4-6.7 8.8-8.1 14c-.3 1.2-.6 2.5-.8 3.8c-.3 1.7-.4 3.4-.4 5.1V448c0 17.7 14.3 32 32 32s32-14.3 32-32V396.9l17.6 17.5 0 0c87.5 87.4 229.3 87.4 316.7 0c24.4-24.4 42.1-53.1 52.9-83.7c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.5 62.5-163.8 62.5-226.3 0l-.1-.1L125.6 352H176c17.7 0 32-14.3 32-32s-14.3-32-32-32H48.4c-1.6 0-3.2 .1-4.8 .3s-3.1 .5-4.6 1z" /></svg>
+                            </li> -->
                             <!-- <li class="add-comment-btn">
                                 <img src="assets/icons/comment-empty.png" class="cn" draggable="true" data-emotion="0">
                             </li> -->
@@ -75,9 +89,18 @@
                             <li class="zoom-out-btn"></li>
                         </ul> -->
                     </div>
-                    <div id="editor"> <!-- Editable area, allows drop -->
+                    <div id="editor">
+                        <!-- Editable area, allows drop -->
                         <div id="editor-body">
                             <div id="pages">
+                                <div id="custom-text">
+                                    <p>Four new astronauts arrived at the International Space Station (ISS) on March 3. They’ll do six months of research. The crew includes scientists from the United States, Russia, and the United Arab Emirates (UAE). Sultan al-Neyadi is just the second person from the UAE to go to space. The four join 11 other people on the ISS.</p>
+                                    <p>The SpaceX capsule took off from Cape Canaveral, Florida, on March 2. Docking at the ISS was delayed for an hour because of a problem with the capsule’s docking hooks. The craft hovered 65 feet from the ISS as flight controllers in California made a software fix.</p>
+                                    <p>“I can’t be happier than this, seeing old friends in space, gathering as a big family,” al-Neyadi said, entering the station. “This is the essence of space exploration.”</p>
+                                    <p>Astronomers have discovered 12 more moons orbiting Jupiter. The planet’s moon count now stands at 92. That’s more than any other planet in our solar system.
+                                    <p>The new moons were spotted using telescopes in Hawaii and Chile. It took scientists about a year to confirm the discovery. The moons are small, no bigger than two miles across. Jupiter has many small moons that could be pieces of bigger moons that collided with comets, asteroids, or other moons.</p>
+                                    <p>“I hope we can image one of these outer moons close-up,” says Scott Sheppard, of the Carnegie Institution for Science, in Washington, D.C. He was on the discovery team. Sheppard wants “to better determine [the moons’] origins.” He suspects more of Jupiter’s moons have yet to be found.</p>
+                                </div>
                                 <div id="page-1" class="page">
                                     <img src="assets/images/1/0001.jpg">
                                 </div>
@@ -104,7 +127,8 @@
                     </div>
                 </div> <!-- main content -->
             </div>
-            <div id="robot-column"> <!-- right sidebar -->
+            <div id="robot-column">
+                <!-- right sidebar -->
                 <div class="temporary-disabled" id="audiences" data-toggler="0" data-class="a" data-group="0">
                     <p>Group: <span>Everyone</span></p>
                     <ul class="audience-groups">
@@ -157,7 +181,8 @@
                         </ul>
                     </div>
                 </div>
-                <div id="add-comment"> <!-- add comment section with the robot -->
+                <div id="add-comment">
+                    <!-- add comment section with the robot -->
                     <div id="comment-input">
                         <textarea placeholder='"Be sure to take a good look at this part!"'></textarea>
                         <button id="play">Play</button>

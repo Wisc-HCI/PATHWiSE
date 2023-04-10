@@ -193,25 +193,78 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
 }
 
 #comments-category {
-  
+    margin-bottom: 15px;
+    height: 48px;
+    padding-right: 25px;
+    cursor: pointer;
+    background-image: url(icons/down-arrow.png);
+    background-repeat: no-repeat;
+    background-position: center right 5px;
+    background-size: 18px;
+    position: relative;
+}
+
+#comments-category p {
+    line-height: 24px;
+    color: #aaaaaa;
+    margin-bottom: 1px;
+}
+
+#comments-category p span {
+    display: block;
+    color: white;
+    height: 24px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#comments-category:not(.active) ul {
+    display: none;
+}
+
+#comments-category ul {
+    display: flex;
+    flex-direction: column;
+    padding: 10px 20px;
+    background-color: #717171;
+    color: #aaaaaa;
+    border: 2px solid #aaaaaa;
+    position: absolute;
+    top: 54px;
+    right: 0;
+    z-index: 9;
+}
+
+#comments-category-all {
+    order: 0 !important;
 }
 
 #comments-category li {
-  padding: 2px 12px;
-  background-color: #bfbfbf;
-  border-radius: 3px;
-  margin-right: 10px;
-  margin-bottom: 15px;
-  display: inline-block;
+    line-height: 25px;
+    order: 99;
 }
 
 #comments-category li:not(.active) {
-  cursor: pointer;
+    cursor: pointer;
 }
 
 #comments-category li:hover,
 #comments-category li.active {
-    background-color: #fff !important;
+    color: #fff;
+}
+
+#comments-template {
+    display: flex;
+    flex-direction: column;
+}
+
+#comments-template-new {
+    order: 0 !important;
+}
+
+#comments-template>ul {
+    order: 99;
 }
 
 #comments-template>ul>li {
@@ -363,6 +416,14 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
 
 #editor-body {
     position: relative;
+}
+
+#custom-text {
+    padding: 60px;
+}
+
+#custom-text p {
+    margin-bottom: 60px;
 }
 
 .pages>img {
@@ -538,18 +599,45 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
     height: 24px;
 }
 
-.refresh-btn {
+.refresh-btn,
+.refresh-ai-btn {
     padding: 1px;
     cursor: pointer !important;
 }
 
-.refresh-btn.active {
+.refresh-btn.active svg,
+.refresh-ai-btn.active svg {
     cursor: not-allowed !important;
     pointer-events: none;
     animation-name: spin;
     animation-duration: 1000ms;
     animation-iteration-count: infinite;
     animation-timing-function: linear;
+}
+
+.refresh-btn svg,
+.refresh-ai-btn svg {
+    fill: #424242;
+}
+
+.refresh-ai-btn {
+    position: relative;
+}
+
+.refresh-ai-btn::after {
+    content: 'AI';
+    text-align: center;
+    position: absolute;
+    bottom: 1px;
+    right: 0;
+    z-index: 9;
+    color: #424242;
+    font-weight: bold;
+    font-size: 13px;
+    background: white;
+    padding: 0px 6px;
+    border-radius: 4px;
+    letter-spacing: 1px;
 }
 
 @keyframes spin {
@@ -560,10 +648,6 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
     to {
         transform: rotate(360deg);
     }
-}
-
-.refresh-btn svg {
-    fill: #424242;
 }
 
 .zoom-in-btn {

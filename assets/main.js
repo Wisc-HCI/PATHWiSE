@@ -387,10 +387,14 @@
                 $('#comment-input').attr('data-play', 1);
             }
         });
+        $(document).on('click', '#comments-category p', function() {
+            $(this).parents('#comments-category').toggleClass('active');
+        });
         $(document).on('click', '#comments-category li:not(.active)', function() {
             var $this = $(this);
             $('#comments-category li').removeClass('active');
             $this.addClass('active');
+            $('#comments-category p span').text($this.text());
         });
         $(document).on('click', '.refresh-btn', function() {
             var $this = $(this);
@@ -401,10 +405,20 @@
                 setTimeout(function() {
                     $(document).find('#comments-template [data-id="' + latestCommentId + '"][data-parent="' + groupName + '"]').remove();
                     getNextComment(groupName, latestCommentId);
+                    // randomly order
                     $this.removeClass('active');
                 }, 1000);
 
             });
+        });
+        $(document).on('click', '.refresh-ai-btn', function() {
+            var $this = $(this);
+            $this.addClass('active');
+            setTimeout(function() {
+                // geenrate comments
+                // randomly order
+                $this.removeClass('active');
+            }, 1000);
         });
         $(document).on('click', '.delete-pin', function() {
             managePin($(this).parents('.cp').attr('id'), 'delete');
@@ -511,9 +525,8 @@
         });
         if (quickComments.length > 0 && elem !== '') {
             $('#comments-template').append(elem);
-            $.each($('#comments-template ul[data-group]'), function(){
-                console.log('<li data-group="' + $(this).attr('data-group') + '">' + $(this).attr('data-group') + '</li>');
-                $('#comments-category').append('<li data-group="' + $(this).attr('data-group') + '">' + $(this).attr('data-group') + '</li>')
+            $.each($('#comments-template ul[data-group]'), function() {
+                $('#comments-category ul').append('<li data-group="' + $(this).attr('data-group') + '">' + $(this).attr('data-group') + '</li>')
             });
         }
     }
@@ -653,4 +666,7 @@
         meta.title = $('#assignment-title').text().trim();
         meta.sampleNo = parseInt($('body').attr('data-version'));
     }
+    $.post("https://www.anistuhin.com/pathwise/", {pwtest: encodeURIComponent('The SpaceX capsule took off from Cape Canaveral, Florida, on March 2. Docking at the ISS was delayed for an hour because of a problem with the capsule’s docking hooks. The craft hovered 65 feet from the ISS as flight controllers in California made a software fix.')},  function(data, status) {
+        console.log(data.trim());
+    });
 })(window.jQuery);
