@@ -12,48 +12,10 @@
     var pins = [];
     var redactors = [];
     var meta = {};
-    // var quickComments = [{
-    //         'group': 'one',
-    //         'show_items': 1,
-    //         'comments': [{
-    //                 'text': `I'm, confused, can you explain what _______ means?`,
-    //                 'emotion': 'Questioning'
-    //             },
-    //             {
-    //                 'text': `I remember from class. A _______ is like a _____.`,
-    //                 'emotion': 'Default'
-    //             }
-    //         ]
-    //     },
-    //     {
-    //         'group': 'two',
-    //         'show_items': 1,
-    //         'comments': [{
-    //                 'text': `That sounds incredible to me. Do you think _______ is always true?`,
-    //                 'emotion': 'Questioning'
-    //             },
-    //             {
-    //                 'text': `So, in other words, _______.`,
-    //                 'emotion': 'Default'
-    //             }
-    //         ]
-    //     },
-    //     {
-    //         'group': 'three',
-    //         'show_items': 1,
-    //         'comments': [{
-    //                 'text': `That's interesting, I think that _______ will happen next!`,
-    //                 'emotion': 'Attentive'
-    //             },
-    //             {
-    //                 'text': `That is so [shocking] to me.`,
-    //                 'emotion': 'Surprised'
-    //             }
-    //         ]
-    //     }
-    // ];
+    var selectedText = '';
     var quickComments = [{ // comment library
             'group': 'student-summary',
+            'desc': 'Summary',
             'show_items': 1,
             'comments': [{
                     'text': `I'm a little confused, can you explain that to me?`,
@@ -81,37 +43,39 @@
                 }
             ]
         },
-        {
-            'group': 'expand-predict',
-            'show_items': 1,
-            'comments': [{
-                    'text': `Can you think of a couple of other examples of this?`,
-                    'emotion': 'Questioning'
-                },
-                {
-                    'text': `Wow! That sounds incredible, do you think its always true?`,
-                    'emotion': 'Surprised'
-                },
-                {
-                    'text': `That's interesting, what do you think would happen next?`,
-                    'emotion': 'Surprised'
-                },
-                {
-                    'text': `Not only that, but I also know that _________`,
-                    'emotion': 'Default'
-                },
-                {
-                    'text': `Another example of this would be _______`,
-                    'emotion': 'Attentive'
-                },
-                {
-                    'text': `I have also learned that ______`,
-                    'emotion': 'Happy'
-                }
-            ]
-        },
+        // {
+        //     'group': 'expand-predict',
+        //     'desc': 'Expand Predict',
+        //     'show_items': 1,
+        //     'comments': [{
+        //             'text': `Can you think of a couple of other examples of this?`,
+        //             'emotion': 'Questioning'
+        //         },
+        //         {
+        //             'text': `Wow! That sounds incredible, do you think its always true?`,
+        //             'emotion': 'Surprised'
+        //         },
+        //         {
+        //             'text': `That's interesting, what do you think would happen next?`,
+        //             'emotion': 'Surprised'
+        //         },
+        //         {
+        //             'text': `Not only that, but I also know that _________`,
+        //             'emotion': 'Default'
+        //         },
+        //         {
+        //             'text': `Another example of this would be _______`,
+        //             'emotion': 'Attentive'
+        //         },
+        //         {
+        //             'text': `I have also learned that ______`,
+        //             'emotion': 'Happy'
+        //         }
+        //     ]
+        // },
         {
             'group': 'vocab-support',
+            'desc': 'Vocabulary Support',
             'show_items': 1,
             'comments': [{
                     'text': `Hoooold on. Can you tell me what  ______ means?`,
@@ -133,6 +97,7 @@
         },
         {
             'group': 'personal-connection',
+            'desc': 'Personal Connection',
             'show_items': 1,
             'comments': [{
                     'text': `Is there something in your home that works this way?`,
@@ -152,29 +117,31 @@
                 }
             ]
         },
-        {
-            'group': 'recalling-past-events',
-            'show_items': 1,
-            'comments': [{
-                    'text': `I remember there was something like that in class - do you remember what it was?`,
-                    'emotion': 'Questioning'
-                },
-                {
-                    'text': `Do you remember something we did in class like this?`,
-                    'emotion': 'Surprised'
-                },
-                {
-                    'text': `Is this something you'd enjoy doing in class? I would!`,
-                    'emotion': 'Happy'
-                },
-                {
-                    'text': `Hmmm. Do you remember reading something about this in class?`,
-                    'emotion': 'Questioning'
-                }
-            ]
-        },
+        // {
+        //     'group': 'recalling-past-events',
+        //     'desc': 'Recalling Past Events',
+        //     'show_items': 1,
+        //     'comments': [{
+        //             'text': `I remember there was something like that in class - do you remember what it was?`,
+        //             'emotion': 'Questioning'
+        //         },
+        //         {
+        //             'text': `Do you remember something we did in class like this?`,
+        //             'emotion': 'Surprised'
+        //         },
+        //         {
+        //             'text': `Is this something you'd enjoy doing in class? I would!`,
+        //             'emotion': 'Happy'
+        //         },
+        //         {
+        //             'text': `Hmmm. Do you remember reading something about this in class?`,
+        //             'emotion': 'Questioning'
+        //         }
+        //     ]
+        // },
         {
             'group': 'emotional-connection',
+            'desc': 'Emotional Connection',
             'show_items': 1,
             'comments': [{
                     'text': `That's so surpising to me!`,
@@ -399,17 +366,42 @@
         $(document).on('click', '.refresh-btn', function() {
             var $this = $(this);
             $this.addClass('active');
-            $.each($('#comments-template ul[data-group]'), function() {
-                var groupName = $(this).attr('data-group');
-                var latestCommentId = $(this).attr('data-latest');
-                setTimeout(function() {
-                    $(document).find('#comments-template [data-id="' + latestCommentId + '"][data-parent="' + groupName + '"]').remove();
-                    getNextComment(groupName, latestCommentId);
-                    // randomly order
-                    $this.removeClass('active');
-                }, 1000);
+            if (selectedText == '') {
+                $.each($('#comments-template ul[data-group]'), function() {
+                    var groupName = $(this).attr('data-group');
+                    var latestCommentId = $(this).attr('data-latest');
+                    setTimeout(function() {
+                        $(document).find('#comments-template [data-id="' + latestCommentId + '"][data-parent="' + groupName + '"]').remove();
+                        getNextComment(groupName, latestCommentId);
+                        // randomly order
+                        $this.removeClass('active');
+                    }, 1000);
 
-            });
+                });
+            } else {
+                var counter = 0;
+                var counterVal = setInterval(function() {
+                    ++counter;
+                }, 1);
+                highlight(selectedText);
+                console.log(selectedText);
+                $.post("https://www.anistuhin.com/pathwise/", { pwtest: encodeURIComponent(selectedText) }, function(data, status) {
+                    data = JSON.parse(data.trim());
+                    console.log(data);
+                    clearInterval(counterVal);
+                    setTimeout(function() {
+                        $('.cai').remove();
+                        $.each($('#comments-template ul[data-group]'), function() {
+                            var groupName = $(this).attr('data-group');
+                            $(this).append('<li class="ce cai" data-parent="' + groupName + '" draggable="true" data-emotion="0">' + data[groupName] + '</li>');
+                        });
+                        // randomly order
+                        $this.removeClass('active');
+                        selectedText = '';
+                    }, (nearestThousand(counter) - counter));
+                });
+            }
+
         });
         $(document).on('click', '.refresh-ai-btn', function() {
             var $this = $(this);
@@ -487,7 +479,33 @@
             //     }
             // });
         });
+        $(document).on('mouseup keyup', '#editor-body', function() {
+            if ($('.highlight').length) {
+                var target = $('.highlight').parent()[0];
+                $('.highlight').contents().unwrap();
+                target.normalize();
+            }
+            if (typeof window.getSelection != "undefined") {
+                selectedText = window.getSelection().toString();
+            } else if (typeof document.selection != "undefined" && document.selection.type == "Text") {
+                selectedText = document.selection.createRange().text;
+            }
+        });
     });
+
+    function nearestThousand(n) {
+        return Math.ceil(n / 1000) * 1000
+    }
+
+    function highlight(text) {
+        var inputText = document.getElementById("editor-body");
+        var innerHTML = inputText.innerHTML;
+        var index = innerHTML.indexOf(text);
+        if (index >= 0) {
+            innerHTML = innerHTML.substring(0, index) + "<span class='highlight'>" + innerHTML.substring(index, index + text.length) + "</span>" + innerHTML.substring(index + text.length);
+            inputText.innerHTML = innerHTML;
+        }
+    }
 
     function submitToGoogleForm(pins, redactors, meta) { // save comment pins with their related comments and emotions etc
         var formid = "e/1FAIpQLScKuIrXyra1lh8Xxt74vbJ9cRr2WfERS8Ho6aQdtSwyA80tYg";
@@ -522,12 +540,10 @@
                 }
             });
             elem += '</ul>';
+            $('#comments-category ul').append('<li data-group="' + v.group + '">' + v.desc + '</li>');
         });
         if (quickComments.length > 0 && elem !== '') {
             $('#comments-template').append(elem);
-            $.each($('#comments-template ul[data-group]'), function() {
-                $('#comments-category ul').append('<li data-group="' + $(this).attr('data-group') + '">' + $(this).attr('data-group') + '</li>')
-            });
         }
     }
 
@@ -666,7 +682,4 @@
         meta.title = $('#assignment-title').text().trim();
         meta.sampleNo = parseInt($('body').attr('data-version'));
     }
-    $.post("https://www.anistuhin.com/pathwise/", {pwtest: encodeURIComponent('The SpaceX capsule took off from Cape Canaveral, Florida, on March 2. Docking at the ISS was delayed for an hour because of a problem with the capsule’s docking hooks. The craft hovered 65 feet from the ISS as flight controllers in California made a software fix.')},  function(data, status) {
-        console.log(data.trim());
-    });
 })(window.jQuery);

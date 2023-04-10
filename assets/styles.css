@@ -29,6 +29,11 @@ body {
     color: #fff;
 }
 
+::-moz-selection, ::selection, .highlight {
+    color: white;
+    background: #457ab1;
+}
+
 a {
     text-decoration: none;
 }
@@ -257,10 +262,19 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
 #comments-template {
     display: flex;
     flex-direction: column;
+    max-height: calc(100vh - 205px);
+    overflow-y: auto;
+    padding-top: 125px;
 }
 
 #comments-template-new {
+    position: fixed;
+    top: 205px;
+    left: 15px;
+    z-index: 8;
     order: 0 !important;
+    background: #595959;
+    width: 250px;
 }
 
 #comments-template>ul {
