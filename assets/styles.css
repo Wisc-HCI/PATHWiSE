@@ -29,7 +29,9 @@ body {
     color: #fff;
 }
 
-::-moz-selection, ::selection, .highlight {
+::-moz-selection,
+::selection,
+.highlight {
     color: white;
     background: #457ab1;
 }
@@ -200,12 +202,6 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
 #comments-category {
     margin-bottom: 15px;
     height: 48px;
-    padding-right: 25px;
-    cursor: pointer;
-    background-image: url(icons/down-arrow.png);
-    background-repeat: no-repeat;
-    background-position: center right 5px;
-    background-size: 18px;
     position: relative;
 }
 
@@ -213,6 +209,12 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
     line-height: 24px;
     color: #aaaaaa;
     margin-bottom: 1px;
+    padding-right: 25px;
+    cursor: pointer;
+    background-image: url(icons/down-arrow.png);
+    background-repeat: no-repeat;
+    background-position: center right 5px;
+    background-size: 18px;
 }
 
 #comments-category p span {
@@ -884,9 +886,13 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
     background-image: url('images/misty/blink.png');
 }
 
-#robot-emotions.default,
+
 #robot-emotions.attentive {
     background-image: url('images/misty/attentive.png');
+}
+
+#robot-emotions.default {
+    background-image: url('images/misty/happy.png');
 }
 
 #robot-emotions.happy {
