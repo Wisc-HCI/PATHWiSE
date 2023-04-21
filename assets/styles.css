@@ -428,10 +428,12 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
     height: calc(100vh - 115px);
     overflow-x: hidden;
     overflow-y: auto;
+    width: 100%;
 }
 
 #editor-body {
     position: relative;
+    width: 100%;
 }
 
 #custom-text {
@@ -892,7 +894,7 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
 }
 
 #robot-emotions.default {
-    background-image: url('images/misty/happy.png');
+    background-image: url('images/misty/default.png');
 }
 
 #robot-emotions.happy {
@@ -963,4 +965,16 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
 
 #audiences>ul li:not(:last-child) {
     margin-bottom: 5px;
+}
+
+#sidebarContainer,
+#dialogContainer,
+#mainContainer>#findbar,
+#mainContainer>#editorFreeTextParamsToolbar,
+#mainContainer>#editorInkParamsToolbar,
+#mainContainer>#secondaryToolbar,
+#mainContainer>.toolbar,
+#printContainer, 
+#fileInput {
+    display: none !important;
 }
