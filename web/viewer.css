@@ -2689,3 +2689,19 @@ dialog :link {
     display: none;
   }
 }
+
+#sidebarContainer,
+#dialogContainer,
+#mainContainer>#findbar,
+#mainContainer>#editorFreeTextParamsToolbar,
+#mainContainer>#editorInkParamsToolbar,
+#mainContainer>#secondaryToolbar,
+#mainContainer>.toolbar,
+#printContainer, 
+#fileInput {
+    display: none !important;
+}
+
+#viewerContainer {
+  inset: 0 !important;
+}
