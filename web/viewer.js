@@ -3181,7 +3181,7 @@ const defaultOptions = {
 };
 {
   defaultOptions.defaultUrl = {
-    value: "https://www.anistuhin.com/pathwise/web/cold_nose_article.pdf", //compressed.tracemonkey-pldi-09.pdf
+    value: "assets/PDF/cold_nose_article.pdf", //compressed.tracemonkey-pldi-09.pdf
     kind: OptionKind.VIEWER
   };
   defaultOptions.disablePreferences = {
