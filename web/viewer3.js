@@ -3181,7 +3181,7 @@ const defaultOptions = {
 };
 {
   defaultOptions.defaultUrl = {
-    value: "assets/PDF/frogs_evolution_article.pdf" //"https://www.anistuhin.com/pathwise/frogs_evolution_article.pdf"
+    value: "assets/PDF/frogs_evolution_article.pdf", //"https://www.anistuhin.com/pathwise/frogs_evolution_article.pdf"
     kind: OptionKind.VIEWER
   };
   defaultOptions.disablePreferences = {

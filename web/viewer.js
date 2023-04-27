@@ -3181,7 +3181,7 @@ const defaultOptions = {
 };
 {
   defaultOptions.defaultUrl = {
-    value: "assets/PDF/cold_nose_article.pdf" //"https://www.anistuhin.com/pathwise/cold_nose_article.pdf"
+    value: "assets/PDF/cold_nose_article.pdf", //"https://www.anistuhin.com/pathwise/cold_nose_article.pdf"
     kind: OptionKind.VIEWER
   };
   defaultOptions.disablePreferences = {
