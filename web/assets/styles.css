@@ -629,6 +629,7 @@ iframe {
 }
 
 .refresh-btn.active svg,
+.refresh-btn.ai-active svg,
 .refresh-ai-btn.active svg {
     cursor: not-allowed !important;
     pointer-events: none;

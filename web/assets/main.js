@@ -14,7 +14,7 @@
     var meta = {};
     window.networkLogs = [];
     var selectedText = '';
-    var commentsGroup = 'all'
+    var commentsGroup = 'all';
     var quickComments = [{ // comment library
             'group': 'student-summary',
             'desc': 'Summary',
@@ -366,46 +366,68 @@
             $('#comments-category p span').text($this.text());
             commentsGroup = $this.attr('data-group').trim().toLowerCase();
             $this.parents('#comments-category').toggleClass('active');
+            setTimeout(function() {
+                $('.refresh-btn').click();
+            }, 100);
         });
         $(document).on('click', '.refresh-btn', function() {
             var $this = $(this);
             $this.addClass('active');
-            if (selectedText == '') {
-                $.each($('#comments-template ul[data-group]'), function() {
-                    var groupName = $(this).attr('data-group');
-                    var latestCommentId = $(this).attr('data-latest');
-                    setTimeout(function() {
-                        $(document).find('#comments-template [data-id="' + latestCommentId + '"][data-parent="' + groupName + '"]').remove();
-                        getNextComment(groupName, latestCommentId);
-                        // randomly order
-                        $this.removeClass('active');
-                    }, 1000);
-
-                });
-            } else {
+            $this.addClass('ai-active');
+            if (selectedText != '') {
                 var counter = 0;
                 var counterVal = setInterval(function() {
                     ++counter;
                 }, 1);
-                highlight(selectedText);
-                console.log(selectedText);
+                //highlight(selectedText);
+                console.log("Sending Request");
                 $.post("https://www.anistuhin.com/pathwise/", { pwtest: encodeURIComponent(selectedText) }, function(data, status) {
                     data = JSON.parse(data.trim());
                     console.log(data);
                     clearInterval(counterVal);
                     setTimeout(function() {
                         $('.cai').remove();
-                        $.each($('#comments-template ul[data-group]'), function() {
-                            var groupName = $(this).attr('data-group');
-                            $(this).append('<li class="ce cai" data-parent="' + groupName + '" draggable="true" data-emotion="0">' + data[groupName] + '</li>');
-                        });
-                        // randomly order
-                        $this.removeClass('active');
+                        if (commentsGroup == 'all') {
+                            $.each($('#comments-template ul[data-group]'), function() {
+                                var groupName = $(this).attr('data-group');
+                                $(this).append('<li class="ce cai" data-parent="' + groupName + '" draggable="true" data-emotion="0">' + data[groupName] + '</li>');
+                            });
+                        } else {
+                            $('#comments-template ul[data-group="' + commentsGroup + '"]').append('<li class="ce cai" data-parent="' + commentsGroup + '" draggable="true" data-emotion="0">' + data[commentsGroup] + '</li>');
+                        }
                         selectedText = '';
+                        $this.removeClass('ai-active');
                     }, (nearestThousand(counter) - counter));
                 });
+            } else {
+                $this.removeClass('ai-active');
             }
+            if (commentsGroup == 'all') {
+                $.each($('#comments-template ul[data-group]'), function() {
+                    var groupName = $(this).attr('data-group');
+                    var latestCommentId = $(this).attr('data-latest');
+                    setTimeout(function() {
+                        $(document).find('#comments-template [data-parent="' + groupName + '"]').remove();
+                        getNextComment(groupName, latestCommentId);
+                        reorder();
+                        $this.removeClass('active');
+                    }, 1000);
 
+                });
+            } else {
+                setTimeout(function() {
+                    $('#comments-template > ul > .ce:not(.cai)').remove();
+                    for (var i = 0; i < 3; i++) {
+                        var latestCommentId = $('ul[data-group="' + commentsGroup + '"]').attr('data-latest');
+                        getNextComment(commentsGroup, latestCommentId);
+                    }
+                    if (selectedText == '') {
+                        $('.cai').remove();
+                    }
+                    reorder();
+                    $this.removeClass('active');
+                }, 1000);
+            }
         });
         $(document).on('click', '.refresh-ai-btn', function() {
             var $this = $(this);
@@ -505,8 +527,32 @@
         });
     });
 
+    function reorder() {
+        var a = [];
+        for (var i = 0; i < 4;) {
+            a[i] = ++i;
+        }
+        a = shuffle(a);
+        for (var i = 2; i < 6; ++i) {
+            $('#comments-category > ul > li:nth-child(' + i + ')').css('order', a[i - 2]);
+            $('#comments-template > ul:nth-child(' + i + ')').css('order', a[i - 2]);
+        }
+    }
+
+    function shuffle(array) {
+        var tmp, current, top = array.length;
+        if (top)
+            while (--top) {
+                current = Math.floor(Math.random() * (top + 1));
+                tmp = array[current];
+                array[current] = array[top];
+                array[top] = tmp;
+            }
+        return array;
+    }
+
     function nearestThousand(n) {
-        return Math.ceil(n / 1000) * 1000
+        return Math.ceil(n / 1000) * 1000;
     }
 
     function highlight(text) {

@@ -3181,7 +3181,7 @@ const defaultOptions = {
 };
 {
   defaultOptions.defaultUrl = {
-    value: "assets/PDF/exoplanet_article.pdf", //compressed.tracemonkey-pldi-09.pdf
+    value: "assets/PDF/exoplanet_article.pdf" //"https://www.anistuhin.com/pathwise/exoplanet_article.pdf"
     kind: OptionKind.VIEWER
   };
   defaultOptions.disablePreferences = {

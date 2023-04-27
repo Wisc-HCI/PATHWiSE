@@ -3181,7 +3181,7 @@ const defaultOptions = {
 };
 {
   defaultOptions.defaultUrl = {
-    value: "assets/PDF/osmosis_article.pdf", //compressed.tracemonkey-pldi-09.pdf
+    value: "assets/PDF/osmosis_article.pdf", //"https://www.anistuhin.com/pathwise/osmosis_article.pdf"
     kind: OptionKind.VIEWER
   };
   defaultOptions.disablePreferences = {
