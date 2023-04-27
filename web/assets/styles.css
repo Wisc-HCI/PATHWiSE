@@ -266,7 +266,7 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
     flex-direction: column;
     max-height: calc(100vh - 205px);
     overflow-y: auto;
-    padding-top: 125px;
+    padding-top: 100px;
 }
 
 #comments-template-new {
@@ -293,7 +293,7 @@ ul#comments-column-toggler[data-toggler="1"] li.comments-template-toggle {
     background-repeat: no-repeat;
     border: 1px solid #404040;
     position: relative;
-    min-height: 100px;
+    min-height: 75px;
     display: flex;
     align-items: center;
 }
@@ -620,6 +620,7 @@ iframe {
 
 .redact-btn {
     height: 24px;
+    display: none !important;
 }
 
 .refresh-btn,
