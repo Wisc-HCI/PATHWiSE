@@ -390,14 +390,6 @@
                         if (commentsGroup == 'all') {
                             $.each($('#comments-template ul[data-group]'), function() {
                                 var groupName = $(this).attr('data-group');
-                                $(this).append('<li class="ce cai" data-parent="' + groupName + '" draggable="true" data-emotion="0">' + data[groupName] + '</li>');
-                            });
-                        } else {
-                            $('#comments-template ul[data-group="' + commentsGroup + '"]').append('<li class="ce cai" data-parent="' + commentsGroup + '" draggable="true" data-emotion="0">' + data[commentsGroup] + '</li>');
-                        }
-                        if (commentsGroup == 'all') {
-                            $.each($('#comments-template ul[data-group]'), function() {
-                                var groupName = $(this).attr('data-group');
                                 var latestCommentId = $(this).attr('data-latest');
                                 setTimeout(function() {
                                     $(document).find('#comments-template [data-parent="' + groupName + '"]').remove();
@@ -420,6 +412,14 @@
                                 reorder();
                                 $this.removeClass('active');
                             }, 1000);
+                        }
+                        if (commentsGroup == 'all') {
+                            $.each($('#comments-template ul[data-group]'), function() {
+                                var groupName = $(this).attr('data-group');
+                                $(this).append('<li class="ce cai" data-parent="' + groupName + '" draggable="true" data-emotion="0">' + data[groupName] + '</li>');
+                            });
+                        } else {
+                            $('#comments-template ul[data-group="' + commentsGroup + '"]').append('<li class="ce cai" data-parent="' + commentsGroup + '" draggable="true" data-emotion="0">' + data[commentsGroup] + '</li>');
                         }
                         selectedText = '';
                         $this.removeClass('ai-active');
@@ -564,6 +564,7 @@
         }
         a = shuffle(a);
         b = shuffle(b);
+        console.log(a, b);
         for (var i = 2; i < 6; ++i) {
             $('#comments-category > ul > li:nth-child(' + i + ')').css('order', a[i - 2]);
             $('#comments-template > ul:nth-child(' + i + ')').css('order', b[i - 2]);
