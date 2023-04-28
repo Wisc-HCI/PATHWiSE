@@ -380,13 +380,13 @@
                     $.each($('#comments-template ul[data-group]'), function() {
                         var groupName = $(this).attr('data-group');
                         var latestCommentId = $(this).attr('data-latest');
-                        $(document).find('#comments-template [data-parent="' + groupName + '"]').remove();
-                        getNextComment(groupName, latestCommentId);
+                        setTimeout(function() {
+                            $(document).find('#comments-template [data-parent="' + groupName + '"]').remove();
+                            getNextComment(groupName, latestCommentId);
+                            reorder();
+                            $this.removeClass('active');
+                        }, 1000);
                     });
-                    setTimeout(function() {
-                        reorder();
-                        $this.removeClass('active');
-                    }, 1000);
                 } else {
                     setTimeout(function() {
                         $('#comments-template > ul > .ce:not(.cai)').remove();
@@ -553,7 +553,7 @@
         }
         a = shuffle(a);
         b = shuffle(b);
-        console.log('HI', a, b);
+        console.log(a, b);
         for (var i = 2; i < 6; ++i) {
             $('#comments-category > ul > li:nth-child(' + i + ')').css('order', a[i - 2]);
             $('#comments-template > ul:nth-child(' + i + ')').css('order', b[i - 2]);
