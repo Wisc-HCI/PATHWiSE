@@ -395,38 +395,64 @@
                         } else {
                             $('#comments-template ul[data-group="' + commentsGroup + '"]').append('<li class="ce cai" data-parent="' + commentsGroup + '" draggable="true" data-emotion="0">' + data[commentsGroup] + '</li>');
                         }
+                        if (commentsGroup == 'all') {
+                            $.each($('#comments-template ul[data-group]'), function() {
+                                var groupName = $(this).attr('data-group');
+                                var latestCommentId = $(this).attr('data-latest');
+                                setTimeout(function() {
+                                    $(document).find('#comments-template [data-parent="' + groupName + '"]').remove();
+                                    getNextComment(groupName, latestCommentId);
+                                    reorder();
+                                    $this.removeClass('active');
+                                }, 1000);
+
+                            });
+                        } else {
+                            setTimeout(function() {
+                                $('#comments-template > ul > .ce:not(.cai)').remove();
+                                for (var i = 0; i < 3; i++) {
+                                    var latestCommentId = $('ul[data-group="' + commentsGroup + '"]').attr('data-latest');
+                                    getNextComment(commentsGroup, latestCommentId);
+                                }
+                                if (selectedText == '') {
+                                    $('.cai').remove();
+                                }
+                                reorder();
+                                $this.removeClass('active');
+                            }, 1000);
+                        }
                         selectedText = '';
                         $this.removeClass('ai-active');
                     }, (nearestThousand(counter) - counter));
                 });
             } else {
                 $this.removeClass('ai-active');
-            }
-            if (commentsGroup == 'all') {
-                $.each($('#comments-template ul[data-group]'), function() {
-                    var groupName = $(this).attr('data-group');
-                    var latestCommentId = $(this).attr('data-latest');
+                if (commentsGroup == 'all') {
+                    $.each($('#comments-template ul[data-group]'), function() {
+                        var groupName = $(this).attr('data-group');
+                        var latestCommentId = $(this).attr('data-latest');
+                        setTimeout(function() {
+                            $(document).find('#comments-template [data-parent="' + groupName + '"]').remove();
+                            getNextComment(groupName, latestCommentId);
+                            reorder();
+                            $this.removeClass('active');
+                        }, 1000);
+
+                    });
+                } else {
                     setTimeout(function() {
-                        $(document).find('#comments-template [data-parent="' + groupName + '"]').remove();
-                        getNextComment(groupName, latestCommentId);
+                        $('#comments-template > ul > .ce:not(.cai)').remove();
+                        for (var i = 0; i < 3; i++) {
+                            var latestCommentId = $('ul[data-group="' + commentsGroup + '"]').attr('data-latest');
+                            getNextComment(commentsGroup, latestCommentId);
+                        }
+                        if (selectedText == '') {
+                            $('.cai').remove();
+                        }
                         reorder();
                         $this.removeClass('active');
                     }, 1000);
-
-                });
-            } else {
-                setTimeout(function() {
-                    $('#comments-template > ul > .ce:not(.cai)').remove();
-                    for (var i = 0; i < 3; i++) {
-                        var latestCommentId = $('ul[data-group="' + commentsGroup + '"]').attr('data-latest');
-                        getNextComment(commentsGroup, latestCommentId);
-                    }
-                    if (selectedText == '') {
-                        $('.cai').remove();
-                    }
-                    reorder();
-                    $this.removeClass('active');
-                }, 1000);
+                }
             }
         });
         $(document).on('click', '.refresh-ai-btn', function() {
@@ -529,13 +555,18 @@
 
     function reorder() {
         var a = [];
+        var b = [];
         for (var i = 0; i < 4;) {
             a[i] = ++i;
         }
+        for (var i = 0; i < 4;) {
+            b[i] = ++i;
+        }
         a = shuffle(a);
+        b = shuffle(b);
         for (var i = 2; i < 6; ++i) {
             $('#comments-category > ul > li:nth-child(' + i + ')').css('order', a[i - 2]);
-            $('#comments-template > ul:nth-child(' + i + ')').css('order', a[i - 2]);
+            $('#comments-template > ul:nth-child(' + i + ')').css('order', b[i - 2]);
         }
     }
 
