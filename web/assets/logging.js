@@ -36,6 +36,7 @@ var GLOBAL_STATE_TO_LOG = function() {
 
     // A persistent unique id for the user.
     var uid = getUniqueId();
+    window.pathSessionId = uid;
 
     // Hooks up all the event listeners.
     function hookEventsToLog() {
@@ -186,14 +187,23 @@ function sendNetworkLog(
     name,
     target,
     info,
-    state) {
+    state,
+    version) {
+    var formid = "e/1FAIpQLScO-nRoe4k3VUIQYFucYu0WUk7HNkduIOiN1nu0N0ymxsIX9g";
     var data = {
-        "uid": uid,
-        "time": time,
-        "name": name,
-        "target": target,
-        "info": info,
-        "state": state
+        "entry.2032535083": uid,
+        "entry.836476239": time,
+        "entry.1793196186": name,
+        "entry.1469484922": target,
+        "entry.684859796": info,
+        "entry.2053693485": state,
+        "entry.296222095": window.pathArticleTitle
     };
-    window.networkLogs.push(data);
+    var params = [];
+    for (key in data) {
+        params.push(key + "=" + encodeURIComponent(data[key]));
+    }
+    // Submit the form using an image to avoid CORS warnings.
+    (new Image).src = "https://docs.google.com/forms/d/" + formid +
+        "/formResponse?" + params.join("&");
 }

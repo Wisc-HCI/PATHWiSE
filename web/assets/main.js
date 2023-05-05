@@ -12,7 +12,7 @@
     var pins = [];
     var redactors = [];
     var meta = {};
-    window.networkLogs = [];
+    window.pathArticleTitle = $('#assignment-title').text().trim();;
     var selectedText = '';
     var commentsGroup = 'all';
     var quickComments = [{ // comment library
@@ -503,7 +503,7 @@
             // var url = '/validate/',
             //     data = '';
             save();
-            submitToGoogleForm(JSON.stringify(pins), JSON.stringify(redactors), JSON.stringify(meta), JSON.stringify(window.networkLogs));
+            submitToGoogleForm(JSON.stringify(pins), JSON.stringify(redactors), JSON.stringify(meta));
             // data.pins = JSON.stringify(pins);
             // data.redactors = JSON.stringify(redactors);
             // data.meta = JSON.stringify(meta);
@@ -769,5 +769,6 @@
         meta.editorHeight = $('#editor-body').height();
         meta.title = $('#assignment-title').text().trim();
         meta.sampleNo = parseInt($('body').attr('data-version'));
+        meta.uid = window.pathSessionId;
     }
 })(window.jQuery);
