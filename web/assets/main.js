@@ -421,45 +421,47 @@
                 }, 1);
                 //highlight(selectedText);
                 //console.log("Sending Request");
-                $.ajax(SERVER_URL + '/comment', {
-                            'data': JSON.stringify({ text: selectedText }),
-                            'type': 'POST',
-                            'contentType': 'application/json'
-                        }).done(function(data) {
-                            //console.log(data);
-                            clearInterval(counterVal);
-                            setTimeout(function() {
-                                if (commentsGroup == 'all') {
-                                    $.each($('#comments-template ul[data-group]'), function() {
-                                        var groupName = $(this).attr('data-group');
-                                        var latestCommentId = $(this).attr('data-latest');
-                                        $(document).find('#comments-template [data-parent="' + groupName + '"]').remove();
-                                        getNextComment(groupName, latestCommentId);
-                                    });
-                                    reorder();
-                                    $this.removeClass('active');
-                                    $('.cai').remove();
-                                    $.each($('#comments-template ul[data-group]'), function() {
-                                        var groupName = $(this).attr('data-group');
-                                        $(this).append('<li class="ce cai" data-parent="' + groupName + '" draggable="true" data-emotion="0">' + data[groupName] + '</li>');
-                                    });
-                                } else {
-                                    $('#comments-template > ul > .ce:not(.cai)').remove();
-                                    for (var i = 0; i < 3; i++) {
-                                        var latestCommentId = $('ul[data-group="' + commentsGroup + '"]').attr('data-latest');
-                                        getNextComment(commentsGroup, latestCommentId);
+                if(selectedText.length > 0){
+                    $.ajax(SERVER_URL + '/comment', {
+                                'data': JSON.stringify({ text: selectedText }),
+                                'type': 'POST',
+                                'contentType': 'application/json'
+                            }).done(function(data) {
+                                //console.log(data);
+                                clearInterval(counterVal);
+                                setTimeout(function() {
+                                    if (commentsGroup == 'all') {
+                                        $.each($('#comments-template ul[data-group]'), function() {
+                                            var groupName = $(this).attr('data-group');
+                                            var latestCommentId = $(this).attr('data-latest');
+                                            $(document).find('#comments-template [data-parent="' + groupName + '"]').remove();
+                                            getNextComment(groupName, latestCommentId);
+                                        });
+                                        reorder();
+                                        $this.removeClass('active');
+                                        $('.cai').remove();
+                                        $.each($('#comments-template ul[data-group]'), function() {
+                                            var groupName = $(this).attr('data-group');
+                                            $(this).append('<li class="ce cai" data-parent="' + groupName + '" draggable="true" data-emotion="0">' + data[groupName] + '</li>');
+                                        });
+                                    } else {
+                                        $('#comments-template > ul > .ce:not(.cai)').remove();
+                                        for (var i = 0; i < 3; i++) {
+                                            var latestCommentId = $('ul[data-group="' + commentsGroup + '"]').attr('data-latest');
+                                            getNextComment(commentsGroup, latestCommentId);
+                                        }
+                                        reorder();
+                                        $this.removeClass('active');
+                                        $('.cai').remove();
+                                        $('#comments-template ul[data-group="' + commentsGroup + '"]').append('<li class="ce cai" data-parent="' + commentsGroup + '" draggable="true" data-emotion="0">' + data[commentsGroup] + '</li>');
                                     }
-                                    reorder();
-                                    $this.removeClass('active');
-                                    $('.cai').remove();
-                                    $('#comments-template ul[data-group="' + commentsGroup + '"]').append('<li class="ce cai" data-parent="' + commentsGroup + '" draggable="true" data-emotion="0">' + data[commentsGroup] + '</li>');
-                                }
-                                selectedText = '';
-                                $this.removeClass('ai-active');
-                            }, (nearestThousand(counter) - counter));
-                    }).fail(function(jqXHR, textStatus, errorThrown){
-                        console.log(jqXHR['responseJSON'])
+                                    selectedText = '';
+                                    $this.removeClass('ai-active');
+                                }, (nearestThousand(counter) - counter));
+                        }).fail(function(jqXHR, textStatus, errorThrown){
+                            console.log(jqXHR['responseJSON'])
                     });
+                }
             }
         });
         $(document).on('click', '.refresh-ai-btn', function() {
