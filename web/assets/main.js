@@ -10,7 +10,7 @@
     var pagesOffsetTop = $('#editor-body').offset().top;
     var pagesOffsetLeft = $('#editor-body').offset().left;
     var scrolledDistance = 0;
-    var emotionsList = ['default', 'anger', 'anticipation', 'disgust', 'fear', 'joy', 'sadness', 'surprise', 'trust']
+    var emotionsList = ['anger', 'anticipation', 'disgust', 'fear', 'joy', 'sadness', 'surprise', 'trust']
     var pins = [];
     var redactors = [];
     var meta = {};
@@ -235,7 +235,9 @@
             $this.addClass('active');
             $this.parents('#selected-emotion').children('p').text($(this).text().trim());
             $this.parents('#selected-emotion').attr('data-toggler', '0');
-            if(emotionId != 0){
+            console.log("emotion selected")
+            if(emotionId !== ""){
+                console.log("valid emotion selected, resetting")
                 $this.parents('#robot-emotions').attr('class', 'blink');
                 setTimeout(function() {
                     $this.parents('#robot-emotions').attr('class', $this.text().trim().toLowerCase());
@@ -343,11 +345,14 @@
             } else {
                 $('#comment-input').attr('data-play', 1);
             }
+            console.log('pin clicked')
             // Necessary to prevent multiple calls to fetchEmotion
-            if($($this).attr('data-emotion').trim() == '0'){
+            if($($this).attr('data-emotion').trim() == ''){
+                console.log('pin does not have a valid emotion, refreshing')
                 prevEmotQueryText = "";
                 refreshEmotion();
             } else {
+                console.log('ping has a valid emotion, no need to refresh')
                 prevEmotQueryText = $($this).attr('data-comment').trim();
             }
             $('#comment-input textarea').focus();
@@ -442,7 +447,7 @@
                                         $('.cai').remove();
                                         $.each($('#comments-template ul[data-group]'), function() {
                                             var groupName = $(this).attr('data-group');
-                                            $(this).append('<li class="ce cai" data-parent="' + groupName + '" draggable="true" data-emotion="0">' + data[groupName] + '</li>');
+                                            $(this).append('<li class="ce cai" data-parent="' + groupName + '" draggable="true" data-emotion="">' + data[groupName] + '</li>');
                                         });
                                     } else {
                                         $('#comments-template > ul > .ce:not(.cai)').remove();
@@ -453,7 +458,7 @@
                                         reorder();
                                         $this.removeClass('active');
                                         $('.cai').remove();
-                                        $('#comments-template ul[data-group="' + commentsGroup + '"]').append('<li class="ce cai" data-parent="' + commentsGroup + '" draggable="true" data-emotion="0">' + data[commentsGroup] + '</li>');
+                                        $('#comments-template ul[data-group="' + commentsGroup + '"]').append('<li class="ce cai" data-parent="' + commentsGroup + '" draggable="true" data-emotion="">' + data[commentsGroup] + '</li>');
                                     }
                                     selectedText = '';
                                     $this.removeClass('ai-active');
@@ -554,6 +559,7 @@
             // var url = '/validate/',
             //     data = '';
             save();
+            // Uncomment the line below to disable loggin to Google forms
             submitToGoogleForm(JSON.stringify(pins), JSON.stringify(redactors), JSON.stringify(meta));
             // data.pins = JSON.stringify(pins);
             // data.redactors = JSON.stringify(redactors);
@@ -593,7 +599,6 @@
         });
 
         $('#comment-input textarea').on("focusout", function(){
-            console.log("Focused out!");
             refreshEmotion();
         })
     });
@@ -695,7 +700,7 @@
         $('.audience-groups li:first-child').click();
         $('.audience-class > ul li:first-child').click();
         $('#audiences').attr('data-toggler', '0');
-        $(document).find('#selected-emotion > ul li:first-child').click();
+        $(document).find('#selected-emotion > ul li:nth-child(2)').click();
         $('#selected-emotion').attr('data-toggler', '0');
         $('#comment-input textarea').val('');
         $('#comment-input[data-play]').removeAttr('data-play');
@@ -732,7 +737,7 @@
     }
 
     function getEmotionId(emotion) { // returns the order of the emotion in the json obj of emotions
-        var id = 0;
+        var id = "";
         $.each(emotionsList, function(i, v) {
             if (emotion == v) {
                 id = i;
@@ -855,16 +860,18 @@
     var prevEmotQueryText = "";
     function refreshEmotion(){
         comment_text = $('#comment-input textarea').val().trim();
-        if(comment_text != prevEmotQueryText && comment_text != ""){
+        if(comment_text == ''){
+            emotion = 'anticipation'
+            $(document).find('#selected-emotion > ul li[data-id="' + getEmotionId(emotion) + '"]').click();
+        } else if(comment_text != prevEmotQueryText){
             var old_class = $('#robot-emotions').attr('class');
             $('#robot-emotions').attr('class', 'blink');
             fetchEmotion(comment_text, function(emotion){
-                if(emotion != null){
-                    // Set the emotion on success
-                    console.log(emotion)
-                    $(document).find('#selected-emotion > ul li[data-id="' + getEmotionId(emotion) + '"]').click();
-                    prevEmotQueryText = comment_text;
+                if(emotion == null){
+                    emotion = 'anticipation';
                 }
+                $(document).find('#selected-emotion > ul li[data-id="' + getEmotionId(emotion) + '"]').click();
+                prevEmotQueryText = comment_text;
             }, function(){
                 $('#robot-emotions').attr('class', old_class);
             })
