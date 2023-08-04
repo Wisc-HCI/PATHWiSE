@@ -1,4 +1,6 @@
 (function($) {
+    // Replace with server url in production
+    var SERVER_URL = 'http://localhost:8000';
     var a1, a2, a3, b1, b2, b3, c1, c2, c3;
     a1 = b2 = c3 = [3, 6, 9, 13, 16, 21, 22, 23, 28, 30];
     a2 = b1 = c2 = [2, 4, 6, 9, 12, 20, 21, 22, 29];
@@ -8,7 +10,7 @@
     var pagesOffsetTop = $('#editor-body').offset().top;
     var pagesOffsetLeft = $('#editor-body').offset().left;
     var scrolledDistance = 0;
-    var emotionsList = ['Default', 'Happy', 'Questioning', 'Confused', 'Sad', 'Surprised', 'Attentive'];
+    // var emotionsList = ['Default', 'Happy', 'Questioning', 'Confused', 'Sad', 'Surprised', 'Attentive'];
     var pins = [];
     var redactors = [];
     var meta = {};
@@ -408,40 +410,45 @@
                 }, 1);
                 //highlight(selectedText);
                 //console.log("Sending Request");
-                $.post("https://www.anistuhin.com/pathwise/", { pwtest: encodeURIComponent(selectedText) }, function(data, status) {
-                    data = JSON.parse(data.trim());
-                    //console.log(data);
-                    clearInterval(counterVal);
-                    setTimeout(function() {
-                        if (commentsGroup == 'all') {
-                            $.each($('#comments-template ul[data-group]'), function() {
-                                var groupName = $(this).attr('data-group');
-                                var latestCommentId = $(this).attr('data-latest');
-                                $(document).find('#comments-template [data-parent="' + groupName + '"]').remove();
-                                getNextComment(groupName, latestCommentId);
-                            });
-                            reorder();
-                            $this.removeClass('active');
-                            $('.cai').remove();
-                            $.each($('#comments-template ul[data-group]'), function() {
-                                var groupName = $(this).attr('data-group');
-                                $(this).append('<li class="ce cai" data-parent="' + groupName + '" draggable="true" data-emotion="0">' + data[groupName] + '</li>');
-                            });
-                        } else {
-                            $('#comments-template > ul > .ce:not(.cai)').remove();
-                            for (var i = 0; i < 3; i++) {
-                                var latestCommentId = $('ul[data-group="' + commentsGroup + '"]').attr('data-latest');
-                                getNextComment(commentsGroup, latestCommentId);
-                            }
-                            reorder();
-                            $this.removeClass('active');
-                            $('.cai').remove();
-                            $('#comments-template ul[data-group="' + commentsGroup + '"]').append('<li class="ce cai" data-parent="' + commentsGroup + '" draggable="true" data-emotion="0">' + data[commentsGroup] + '</li>');
-                        }
-                        selectedText = '';
-                        $this.removeClass('ai-active');
-                    }, (nearestThousand(counter) - counter));
-                });
+                $.ajax(SERVER_URL + '/comment', {
+                            'data': JSON.stringify({ text: selectedText }),
+                            'type': 'POST',
+                            'contentType': 'application/json'
+                        }).done(function(data) {
+                            //console.log(data);
+                            clearInterval(counterVal);
+                            setTimeout(function() {
+                                if (commentsGroup == 'all') {
+                                    $.each($('#comments-template ul[data-group]'), function() {
+                                        var groupName = $(this).attr('data-group');
+                                        var latestCommentId = $(this).attr('data-latest');
+                                        $(document).find('#comments-template [data-parent="' + groupName + '"]').remove();
+                                        getNextComment(groupName, latestCommentId);
+                                    });
+                                    reorder();
+                                    $this.removeClass('active');
+                                    $('.cai').remove();
+                                    $.each($('#comments-template ul[data-group]'), function() {
+                                        var groupName = $(this).attr('data-group');
+                                        $(this).append('<li class="ce cai" data-parent="' + groupName + '" draggable="true" data-emotion="0">' + data[groupName] + '</li>');
+                                    });
+                                } else {
+                                    $('#comments-template > ul > .ce:not(.cai)').remove();
+                                    for (var i = 0; i < 3; i++) {
+                                        var latestCommentId = $('ul[data-group="' + commentsGroup + '"]').attr('data-latest');
+                                        getNextComment(commentsGroup, latestCommentId);
+                                    }
+                                    reorder();
+                                    $this.removeClass('active');
+                                    $('.cai').remove();
+                                    $('#comments-template ul[data-group="' + commentsGroup + '"]').append('<li class="ce cai" data-parent="' + commentsGroup + '" draggable="true" data-emotion="0">' + data[commentsGroup] + '</li>');
+                                }
+                                selectedText = '';
+                                $this.removeClass('ai-active');
+                            }, (nearestThousand(counter) - counter));
+                    }).fail(function(jqXHR, textStatus, errorThrown){
+                        console.log(jqXHR['responseJSON'])
+                    });
             }
         });
         $(document).on('click', '.refresh-ai-btn', function() {
@@ -499,6 +506,37 @@
         $(document).on('click', '#comment-input[data-play="1"] #play', function() {
             say($(this).parent().children('textarea').val().trim());
         });
+
+        $('#emotion-button').on('click', function() {
+            comment_text = $('#comment-input textarea').val().trim()
+            $('#emotion-button').prop("disabled",true);
+            $('#emotion-button').addClass("disabled-button");
+            $.ajax(SERVER_URL + '/emotion', {
+                'data': JSON.stringify({ text: comment_text }),
+                'type': 'POST',
+                'contentType': 'application/json'
+            }).done(function(data) {
+                var emotions = data['emotion_classes']
+                if (emotions.length == 0){
+                    alert("No emotion labeled");
+                }
+                console.log(emotions)
+                var emotions = emotions.map(function(emot){
+                    return `[${emot}]`
+                })
+                console.log(emotions)
+                var emotions_text = emotions.join(' ')
+                console.log(emotions_text)
+                $('#comment-input textarea').val(comment_text + ' ' + emotions_text)
+
+            }).fail(function(jqXHR, textStatus, errorThrown){
+                console.log(jqXHR['responseJSON'])
+            }).always(function(){
+                $('#emotion-button').prop("disabled", false);
+                $('#emotion-button').removeClass("disabled-button");
+            });
+        });
+
         $(document).on('click', '#save-btn', function() {
             // var url = '/validate/',
             //     data = '';

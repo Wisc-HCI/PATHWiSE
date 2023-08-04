@@ -851,6 +851,26 @@ iframe {
     font-size: 18px;
 }
 
+#emotion-button {
+    color: white;
+    font-size: 16px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    background-color: #aaaaaa;
+    left: 10%;
+    bottom: 150px;
+    width: 80%;
+    height: 30px;
+    position: absolute;
+    z-index: 9;
+    cursor: not-allowed;
+}
+
+.disabled-button {
+    background-color: #aaaaaa !important;
+}
+
+
 #play {
     color: white;
     font-size: 16px;
@@ -866,9 +886,9 @@ iframe {
     cursor: not-allowed;
 }
 
-#comment-input[data-play="1"] #play {
-    background-color: #457ab1 !important;
-    cursor: pointer !important;
+#comment-input[data-play="1"] button {
+    background-color: #457ab1;
+    cursor: pointer;
 }
 
 #robot-emotions,
