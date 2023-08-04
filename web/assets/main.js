@@ -10,7 +10,7 @@
     var pagesOffsetTop = $('#editor-body').offset().top;
     var pagesOffsetLeft = $('#editor-body').offset().left;
     var scrolledDistance = 0;
-    // var emotionsList = ['Default', 'Happy', 'Questioning', 'Confused', 'Sad', 'Surprised', 'Attentive'];
+    var emotionsList = ['default', 'anger', 'anticipation', 'disgust', 'fear', 'joy', 'sadness', 'surprise', 'trust']
     var pins = [];
     var redactors = [];
     var meta = {};
@@ -23,27 +23,27 @@
             'show_items': 1,
             'comments': [{
                     'text': `I'm a little confused, can you explain that to me?`,
-                    'emotion': 'Confused'
+                    'emotion': 'anticipation'
                 },
                 {
                     'text': `I THINK I understood, but could you summarize what that means for me?`,
-                    'emotion': 'Questioning'
+                    'emotion': 'anticipation'
                 },
                 {
                     'text': `How would you explain this to someone else in class?`,
-                    'emotion': 'Questioning'
+                    'emotion': 'anticipation'
                 },
                 {
                     'text': `So in other words, ______ _______`,
-                    'emotion': 'Happy'
+                    'emotion': 'joy'
                 },
                 {
                     'text': `I can think of a couple more examples, such as ______ and _____`,
-                    'emotion': 'Happy'
+                    'emotion': 'joy'
                 },
                 {
                     'text': `This reminds me of that class activity we did, where we _______`,
-                    'emotion': 'Surprised'
+                    'emotion': 'surprised'
                 }
             ]
         },
@@ -83,19 +83,19 @@
             'show_items': 1,
             'comments': [{
                     'text': `Hoooold on. Can you tell me what  ______ means?`,
-                    'emotion': 'Questioning'
+                    'emotion': 'anticipation'
                 },
                 {
                     'text': `Huh? What do you think they mean when they say ____?`,
-                    'emotion': 'Questioning'
+                    'emotion': 'anticipation'
                 },
                 {
                     'text': `I've heard ____ before, I think it means ______.`,
-                    'emotion': 'Happy'
+                    'emotion': 'joy'
                 },
                 {
                     'text': `I think when they're saying ____ it means ______.`,
-                    'emotion': 'Happy'
+                    'emotion': 'joy'
                 }
             ]
         },
@@ -105,19 +105,19 @@
             'show_items': 1,
             'comments': [{
                     'text': `Is there something in your home that works this way?`,
-                    'emotion': 'Questioning'
+                    'emotion': 'anticipation'
                 },
                 {
                     'text': `How do you think this might inform someone doing sports?`,
-                    'emotion': 'Questioning'
+                    'emotion': 'anticipation'
                 },
                 {
                     'text': `Knowing this, would you change how you go about your day?`,
-                    'emotion': 'Questioning'
+                    'emotion': 'anticipation'
                 },
                 {
                     'text': `Do you think this is something robots like me should know?`,
-                    'emotion': 'Happy'
+                    'emotion': 'joy'
                 }
             ]
         },
@@ -149,23 +149,23 @@
             'show_items': 1,
             'comments': [{
                     'text': `That's so surpising to me!`,
-                    'emotion': 'Surprised'
+                    'emotion': 'surprised'
                 },
                 {
                     'text': `I think this is probably the key bit for us to understand!`,
-                    'emotion': 'Attentive'
+                    'emotion': 'anticipation'
                 },
                 {
                     'text': `This would be a lot of fun to do in class!`,
-                    'emotion': 'Happy'
+                    'emotion': 'joy'
                 },
                 {
                     'text': `Can you imagine how that feels?`,
-                    'emotion': 'Confused'
+                    'emotion': 'anticipation'
                 },
                 {
                     'text': `Woah! That's so cool`,
-                    'emotion': 'Surprised'
+                    'emotion': 'surprised'
                 }
             ]
         }
@@ -235,10 +235,12 @@
             $this.addClass('active');
             $this.parents('#selected-emotion').children('p').text($(this).text().trim());
             $this.parents('#selected-emotion').attr('data-toggler', '0');
-            $this.parents('#robot-emotions').attr('class', 'blink');
-            setTimeout(function() {
-                $this.parents('#robot-emotions').attr('class', $this.text().trim().toLowerCase());
-            }, 150);
+            if(emotionId != 0){
+                $this.parents('#robot-emotions').attr('class', 'blink');
+                setTimeout(function() {
+                    $this.parents('#robot-emotions').attr('class', $this.text().trim().toLowerCase());
+                }, 150);
+            }
             if ($('.cp.focused').length == 1) {
                 $('.cp#' + $('.cp.focused').attr('id')).attr('data-emotion', emotionId);
                 $('#comments-list [data-id="' + $('.cp.focused').attr('id') + '"]').attr('data-emotion', emotionId);
@@ -263,6 +265,7 @@
         });
         $(document).on('drop', '#pages', function(e) {
             e.preventDefault();
+            // console.log("pin dropped!")
             //init();
             var elem = $.parseHTML(e.originalEvent.dataTransfer.getData("text/html"))[0];
             var posTop = (e.originalEvent.clientY - pagesOffsetTop) + scrolledDistance;
@@ -302,7 +305,8 @@
                 if ($(elem).hasClass('cn')) {
                     $('#comment-input textarea').attr('placeholder', '[Create your own comment]');
                 }
-                if ($(elem).hasClass('ce')) {
+                // This always crashes
+                if ($(elem).hasClass('ce')) { 
                     var groupName = $(elem).attr('data-parent').trim();
                     var currentCommentId = $(elem).attr('data-id').trim();
                     var latestCommentId = $('#comments-template [data-group="' + groupName + '"]').attr('data-latest').trim();
@@ -338,6 +342,13 @@
                 $('#comment-input[data-play]').removeAttr('data-play');
             } else {
                 $('#comment-input').attr('data-play', 1);
+            }
+            // Necessary to prevent multiple calls to fetchEmotion
+            if($($this).attr('data-emotion').trim() == '0'){
+                prevEmotQueryText = "";
+                refreshEmotion();
+            } else {
+                prevEmotQueryText = $($this).attr('data-comment').trim();
             }
             $('#comment-input textarea').focus();
         });
@@ -507,35 +518,35 @@
             say($(this).parent().children('textarea').val().trim());
         });
 
-        $('#emotion-button').on('click', function() {
-            comment_text = $('#comment-input textarea').val().trim()
-            $('#emotion-button').prop("disabled",true);
-            $('#emotion-button').addClass("disabled-button");
-            $.ajax(SERVER_URL + '/emotion', {
-                'data': JSON.stringify({ text: comment_text }),
-                'type': 'POST',
-                'contentType': 'application/json'
-            }).done(function(data) {
-                var emotions = data['emotion_classes']
-                if (emotions.length == 0){
-                    alert("No emotion labeled");
-                }
-                console.log(emotions)
-                var emotions = emotions.map(function(emot){
-                    return `[${emot}]`
-                })
-                console.log(emotions)
-                var emotions_text = emotions.join(' ')
-                console.log(emotions_text)
-                $('#comment-input textarea').val(comment_text + ' ' + emotions_text)
+        // $('#emotion-button').on('click', function() {
+        //     comment_text = $('#comment-input textarea').val().trim()
+        //     $('#emotion-button').prop("disabled",true);
+        //     $('#emotion-button').addClass("disabled-button");
+        //     $.ajax(SERVER_URL + '/emotion', {
+        //         'data': JSON.stringify({ text: comment_text }),
+        //         'type': 'POST',
+        //         'contentType': 'application/json'
+        //     }).done(function(data) {
+        //         var emotions = data['emotion_classes']
+        //         if (emotions.length == 0){
+        //             alert("No emotion labeled");
+        //         }
+        //         console.log(emotions)
+        //         var emotions = emotions.map(function(emot){
+        //             return `[${emot}]`
+        //         })
+        //         console.log(emotions)
+        //         var emotions_text = emotions.join(' ')
+        //         console.log(emotions_text)
+        //         $('#comment-input textarea').val(comment_text + ' ' + emotions_text)
 
-            }).fail(function(jqXHR, textStatus, errorThrown){
-                console.log(jqXHR['responseJSON'])
-            }).always(function(){
-                $('#emotion-button').prop("disabled", false);
-                $('#emotion-button').removeClass("disabled-button");
-            });
-        });
+        //     }).fail(function(jqXHR, textStatus, errorThrown){
+        //         console.log(jqXHR['responseJSON'])
+        //     }).always(function(){
+        //         $('#emotion-button').prop("disabled", false);
+        //         $('#emotion-button').removeClass("disabled-button");
+        //     });
+        // });
 
         $(document).on('click', '#save-btn', function() {
             // var url = '/validate/',
@@ -578,6 +589,11 @@
                 $('#pages').height($('#outerContainer #viewer').height());
             }, 500);
         });
+
+        $('#comment-input textarea').on("focusout", function(){
+            console.log("Focused out!");
+            refreshEmotion();
+        })
     });
 
     function reorder() {
@@ -809,4 +825,48 @@
         meta.sampleNo = parseInt($('body').attr('data-version'));
         meta.uid = window.pathSessionId;
     }
+
+    function fetchEmotion(comment_text, onSuccess, onFail){
+        $.ajax(SERVER_URL + '/emotion', {
+            'data': JSON.stringify({ text: comment_text }),
+            'type': 'POST',
+            'contentType': 'application/json'
+        }).done(function(data) {
+            var emotions = data['emotion_classes']
+            if (emotions.length == 0){
+                alert("Request successful but no emotion labeled");
+                emotion = null;
+            } else {
+                // Take the first emotion returned by the API and map it to emotion category i.e. remove +/- if present
+                var emotion = emotions[0]
+                if(emotion.includes('+') || emotion.includes('-')){
+                    emotion = emotion.substr(0, emotion.length - 1);
+                }
+            }
+            onSuccess(emotion);
+        }).fail(function(jqXHR, textStatus, errorThrown){
+            console.log(jqXHR['responseJSON'])
+            onFail();            
+        })
+    }
+
+    var prevEmotQueryText = "";
+    function refreshEmotion(){
+        comment_text = $('#comment-input textarea').val().trim();
+        if(comment_text != prevEmotQueryText && comment_text != ""){
+            var old_class = $('#robot-emotions').attr('class');
+            $('#robot-emotions').attr('class', 'blink');
+            fetchEmotion(comment_text, function(emotion){
+                if(emotion != null){
+                    // Set the emotion on success
+                    console.log(emotion)
+                    $(document).find('#selected-emotion > ul li[data-id="' + getEmotionId(emotion) + '"]').click();
+                    prevEmotQueryText = comment_text;
+                }
+            }, function(){
+                $('#robot-emotions').attr('class', old_class);
+            })
+        }
+    }
+
 })(window.jQuery);

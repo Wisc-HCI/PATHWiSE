@@ -851,26 +851,6 @@ iframe {
     font-size: 18px;
 }
 
-#emotion-button {
-    color: white;
-    font-size: 16px;
-    font-weight: bold;
-    letter-spacing: 1px;
-    background-color: #aaaaaa;
-    left: 10%;
-    bottom: 150px;
-    width: 80%;
-    height: 30px;
-    position: absolute;
-    z-index: 9;
-    cursor: not-allowed;
-}
-
-.disabled-button {
-    background-color: #aaaaaa !important;
-}
-
-
 #play {
     color: white;
     font-size: 16px;
@@ -915,33 +895,49 @@ iframe {
     background-image: url('images/misty/blink.png');
 }
 
-
-#robot-emotions.attentive {
-    background-image: url('images/misty/attentive.png');
+#robot-emotions {
+    background-size: 53%;
+    background-position-x: 75%;
+    background-position-y: 20%;
 }
 
 #robot-emotions.default {
     background-image: url('images/misty/default.png');
 }
 
-#robot-emotions.happy {
-    background-image: url('images/misty/happy.png');
+
+#robot-emotions.anger {
+    background-image: url('images/misty/anger.png');
 }
 
-#robot-emotions.sad {
-    background-image: url('images/misty/sad.png');
+#robot-emotions.anticipation {
+    background-image: url('images/misty/anticipation.png');
 }
 
-#robot-emotions.questioning {
-    background-image: url('images/misty/questioning.png');
+
+#robot-emotions.disgust {
+    background-image: url('images/misty/disgust.png');
 }
 
-#robot-emotions.confused {
-    background-image: url('images/misty/confused.png');
+#robot-emotions.fear {
+    background-image: url('images/misty/fear.png');
 }
 
-#robot-emotions.surprised {
-    background-image: url('images/misty/surprised.png');
+#robot-emotions.joy {
+    background-image: url('images/misty/joy.png');
+}
+
+
+#robot-emotions.sadness {
+    background-image: url('images/misty/sadness.png');
+}
+
+#robot-emotions.surprise {
+    background-image: url('images/misty/surprise.png');
+}
+
+#robot-emotions.trust {
+    background-image: url('images/misty/trust.png');
 }
 
 #selected-emotion {
