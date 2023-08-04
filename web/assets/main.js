@@ -1,6 +1,8 @@
 (function($) {
-    // Replace with server url in production
+    // @TODO replace with server url in production
     var SERVER_URL = 'http://localhost:8000';
+    // @TODO replace with true in production
+    var ENABLE_GFORMS_LOGGING = false;
     var a1, a2, a3, b1, b2, b3, c1, c2, c3;
     a1 = b2 = c3 = [3, 6, 9, 13, 16, 21, 22, 23, 28, 30];
     a2 = b1 = c2 = [2, 4, 6, 9, 12, 20, 21, 22, 29];
@@ -43,7 +45,7 @@
                 },
                 {
                     'text': `This reminds me of that class activity we did, where we _______`,
-                    'emotion': 'surprised'
+                    'emotion': 'surprise'
                 }
             ]
         },
@@ -149,7 +151,7 @@
             'show_items': 1,
             'comments': [{
                     'text': `That's so surpising to me!`,
-                    'emotion': 'surprised'
+                    'emotion': 'surprise'
                 },
                 {
                     'text': `I think this is probably the key bit for us to understand!`,
@@ -235,9 +237,9 @@
             $this.addClass('active');
             $this.parents('#selected-emotion').children('p').text($(this).text().trim());
             $this.parents('#selected-emotion').attr('data-toggler', '0');
-            console.log("emotion selected")
+            // console.log("emotion selected")
             if(emotionId !== ""){
-                console.log("valid emotion selected, resetting")
+                // console.log("valid emotion selected, resetting")
                 $this.parents('#robot-emotions').attr('class', 'blink');
                 setTimeout(function() {
                     $this.parents('#robot-emotions').attr('class', $this.text().trim().toLowerCase());
@@ -345,14 +347,14 @@
             } else {
                 $('#comment-input').attr('data-play', 1);
             }
-            console.log('pin clicked')
+            // console.log('pin clicked')
             // Necessary to prevent multiple calls to fetchEmotion
             if($($this).attr('data-emotion').trim() == ''){
-                console.log('pin does not have a valid emotion, refreshing')
+                // console.log('pin does not have a valid emotion, refreshing')
                 prevEmotQueryText = "";
                 refreshEmotion();
             } else {
-                console.log('ping has a valid emotion, no need to refresh')
+                // console.log('pin has a valid emotion, no need to refresh')
                 prevEmotQueryText = $($this).attr('data-comment').trim();
             }
             $('#comment-input textarea').focus();
@@ -559,8 +561,10 @@
             // var url = '/validate/',
             //     data = '';
             save();
-            // Uncomment the line below to disable loggin to Google forms
-            submitToGoogleForm(JSON.stringify(pins), JSON.stringify(redactors), JSON.stringify(meta));
+            if(ENABLE_GFORMS_LOGGING) {
+                submitToGoogleForm(JSON.stringify(pins), JSON.stringify(redactors), JSON.stringify(meta));
+            }
+            
             // data.pins = JSON.stringify(pins);
             // data.redactors = JSON.stringify(redactors);
             // data.meta = JSON.stringify(meta);
@@ -864,6 +868,7 @@
             emotion = 'anticipation'
             $(document).find('#selected-emotion > ul li[data-id="' + getEmotionId(emotion) + '"]').click();
         } else if(comment_text != prevEmotQueryText){
+            // console.log('fetching new emotion')
             var old_class = $('#robot-emotions').attr('class');
             $('#robot-emotions').attr('class', 'blink');
             fetchEmotion(comment_text, function(emotion){
