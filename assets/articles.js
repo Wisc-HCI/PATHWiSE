@@ -109,6 +109,10 @@ var articles = [{
     {
         'title': 'The Little Red Fort',
         'filename': 'the-little-red-fort'
+    },
+    {
+        'title': 'The Camping Trip',
+        'filename': 'the-camping-trip'
     }
 ];
 
