@@ -21,6 +21,7 @@
     "trust",
     "neutral"
   ];
+  var typeList = ["custom", "summary", "vocab", "personal", "emotional"];
   var pins = [];
   var redactors = [];
   var meta = {};
@@ -1332,6 +1333,18 @@
     return id;
   }
 
+  // Aadya's Code: Start
+  function getTypeId(type) { // returns the order of the type in the json obj of types
+    var id = 0;
+    $.each(typeList, function(i, v) {
+        if (type == v) {
+            id = i;
+        }
+    });
+    return id;
+}
+// Aadya's Code: End
+
   function getNextComment(groupName, latestCommentId) {
     // return the next available comment from a comment group to replace the comment template that has just been dragged onto the editor from the sidebar
     $.each(quickComments, function (i, v) {
@@ -1492,6 +1505,34 @@
       });
   }
 
+  // aadya: code for type api and automated categorizing
+  function fetchType(comment_text, onSuccess, onFail) {
+    $.ajax(SERVER_URL + '/type', {
+        'data': JSON.stringify({ text: comment_text }),
+        'type': 'POST',
+        'contentType': 'application/json'
+    }).done(function(data) {
+        var type = null;
+        // console.log(data);
+        var type_list = data['type_classes'];
+        // console.log(type_list);
+        if (type_list.length == 0) {
+            console.log("Request successful but no emotion labeled");
+        } else {
+            // Take the first emotion returned by the API and map it to emotion category i.e. remove +/- if present
+            type = type_list[0];
+            
+            // console.log(type);
+            // console.log(type_list[0]);
+        }
+        onSuccess(type);
+    }).fail(function(jqXHR, textStatus, errorThrown) {
+        console.log("type api request: ", jqXHR['responseJSON'])
+        onFail();
+    })
+}
+// End of aadya's code
+
   var prevEmotQueryText = "";
 
   function refreshEmotion() {
@@ -1517,6 +1558,20 @@
           $("#robot-emotions").attr("class", old_class);
         }
       );
+      // Aadya's Code
+      fetchType(comment_text, function(type) {
+        if (type == null) {
+            $('[data-id=' + $('#pages .focused').attr('id') + '] .comment-container.has-dropdown ul li[data-type="0"]').click(); 
+        } else {
+          type = type.replace(/\+/g, '').replace(/\-/g, '').trim().toLowerCase();
+          $('[data-id=' + $('#pages .focused').attr('id') + '] .comment-container.has-dropdown ul li[data-type="' + getTypeId(type) + '"]').click(); 
+        }
+        $(".custom-comment-title").removeClass("active");
+    }, function() {
+        $('[data-id=' + $('#pages .focused').attr('id') + '] .comment-container.has-dropdown ul li[data-type="0"]').click(); 
+        $(".custom-comment-title").removeClass("active");
+    });
+    // End of Aadya's Code
     }
   }
 
