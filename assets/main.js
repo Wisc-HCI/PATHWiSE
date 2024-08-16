@@ -10,12 +10,12 @@
     var pagesOffsetTop = $('#editor-body').offset().top;
     var pagesOffsetLeft = $('#editor-body').offset().left;
     var scrolledDistance = 0;
-    var emotionsList = ['anger', 'anticipation', 'disgust', 'fear', 'joy', 'sadness', 'surprise', 'trust'];
+    var emotionsList = ['anger', 'anticipation', 'disgust', 'fear', 'joy', 'sadness', 'surprise', 'trust']
     var pins = [];
     var redactors = [];
     var meta = {};
     var loginGroup = "";
-    window.pathArticleTitle = $('#assignment-title').text().trim();
+    window.pathArticleTitle = $('#assignment-title').text().trim();;
     var selectedText = '';
     var commentsGroup = 'all';
     var quickComments = [{ // comment library
@@ -639,14 +639,9 @@
                         console.log(response);
                         console.log(data);
                     } else {
-                        console.log('Something went wrong with the database!');
+                        console.log('Something went wrong!');
                     }
                 });
-                var $this = $(this);
-                $this.addClass('pressed');
-                setTimeout(function() {
-                    $this.removeClass('pressed');
-                }, 1000)
             } else {
                 alert('No comments to save');
             }
@@ -681,7 +676,7 @@
         commentPinCount = 1;
         $('#comments-list > ul').empty();
         $('#pages div.cp').remove();
-        var recreatePins = JSON.parse($('#pins-data').text().trim());
+        var recreatePins = JSON.parse($('#resume').attr("data-pins"));
         $.each(recreatePins, function(i, v) {
             var pinId = Number(v.id.slice(1));
             if (pinId >= commentPinCount) {
@@ -794,7 +789,7 @@
                     var response = JSON.parse(result);
                     if (response.status) {
                         $('#resume').removeClass('temporary-hidden');
-                        $('#pins-data').text(response.pins);
+                        $('#resume').attr("data-pins", response.pins);
                     }
                 } else {
                     console.log('Something went wrong from fetching the latest data!');

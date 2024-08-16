@@ -216,14 +216,6 @@ nav>.container>ul>li>span {
     cursor: pointer;
 }
 
-#save-btn.pressed {
-    background: #595959;
-}
-
-#save-btn.pressed::after {
-  content: "d ✔";
-}
-
 .brand {
     color: white;
     font-size: 25px;
