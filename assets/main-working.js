@@ -19,9 +19,8 @@
     "sadness",
     "surprise",
     "trust",
-    "neutral"
+    "neutral",
   ];
-  var typeList = ["custom", "summary", "vocab", "personal", "emotional"];
   var pins = [];
   var redactors = [];
   var meta = {};
@@ -31,13 +30,13 @@
   var commentsGroup = "all";
   // flori: variables start point -------
   var typePanel = [
-      {
-        type: "custom",
-        count: 0,
-        show: true,
-        width: 0,
-      },
-      {
+    {
+      type: "custom",
+      count: 0,
+      show: true,
+      width: 0,
+    },
+    {
       type: "student-summary",
       count: 0,
       show: true,
@@ -346,7 +345,10 @@
       var emotionId = getEmotionId($(this).text().trim());
       $("#selected-emotion > ul li").removeClass("active");
       $this.addClass("active");
-      $this.parents("#selected-emotion").children("p").text($(this).text().trim());
+      $this
+        .parents("#selected-emotion")
+        .children("p")
+        .text($(this).text().trim());
       $this.parents("#selected-emotion").attr("data-toggler", "0");
       if (emotionId !== "") {
         // console.log("valid emotion selected, resetting")
@@ -359,10 +361,14 @@
       }
       if ($(".cp.focused").length == 1) {
         $(".cp#" + $(".cp.focused").attr("id")).attr("data-emotion", emotionId);
-        $('#comments-list [data-id="' + $(".cp.focused").attr("id") + '"]').attr("data-emotion", emotionId);
+        $(
+          '#comments-list [data-id="' + $(".cp.focused").attr("id") + '"]'
+        ).attr("data-emotion", emotionId);
         managePin($(".cp.focused").attr("id"), "updateEmotion", emotionId);
         // flori: add blue background to active comment id
-        $('#comments-list ul li[data-id="' + $('.cp.focused').attr('id') + '"]').find('.comment-id').addClass('active');
+        $('#comments-list ul li[data-id="' + $(".cp.focused").attr("id") + '"]')
+          .find(".comment-id")
+          .addClass("active");
       }
       // flori: update emotions panel and sort
       updateEmotionsPanel();
@@ -371,7 +377,7 @@
     // flori: open/close bottom panel on click
     $(document).ready(function () {
       $("#bottom-panel-type-bar").on("click", function (e) {
-        e.stopPropagation(); 
+        e.stopPropagation();
         $(this).toggleClass("active");
       });
       $(document).on("click", function () {
@@ -380,14 +386,14 @@
       $(".hide-type").on("click", function (e) {
         e.stopPropagation();
       });
-      $(".hide-bottom-panel-text").on("click", typeBarSort);
+      $(".hide-bottom-panel-text").on("click", sortTypeAndEmotions);
     });
     //  flori: toggle active class for each type bar text
     $(document).on("click", ".hide-bottom-panel-text", function () {
       $(this).toggleClass("active");
     });
     //  flori: toggle active class for each emoji
-    $(document).on("click", ".emoji", emotionsSort);
+    $(document).on("click", ".emoji", sortTypeAndEmotions);
     $(document).ready(function () {
       // flori: open/close user profile
       $("#user-profile").on("click", function (e) {
@@ -425,7 +431,6 @@
       checkSortOption();
     });
     $(document).on("drop", "#pages", function (e) {
-      
       e.preventDefault();
       // console.log("pin dropped!")
       //init();
@@ -436,7 +441,7 @@
       var posLeft = e.originalEvent.clientX - pagesOffsetLeft;
       var cText = $(elem).text().trim();
       // flori: added new var cType
-      var cType = $(elem).attr("data-type"); 
+      var cType = $(elem).attr("data-type");
       var cEmotion = $(elem).attr("data-emotion");
       var editorWidth = $("#editor").width();
       var diffY = 0;
@@ -453,7 +458,6 @@
           .split("-")[1];
       }
       if ($(elem).hasClass("cp")) {
-
         var cID = $(elem).attr("id").trim();
         $(document)
           .find(".cp#" + cID)
@@ -480,17 +484,47 @@
           .find(".cp#" + cID + ">p")
           .click();
         sortComments(cID);
-        // flori: update sort (so order doesnt change when dragging bubble on editor) 
+        // flori: update sort (so order doesnt change when dragging bubble on editor)
         checkSortOption();
       }
 
       if ($(elem).hasClass("cn") || $(elem).hasClass("ce")) {
-        $("#pages").append('<div data-type="' + cType + '" data-emotion="' + cEmotion + '" data-comment="' + cText + '" id="c' + commentPinCount + '" class="cp" draggable="true" style="top:' + posTop + "px; left:" + posLeft + 'px;"><p></p><ul><li class="delete-pin">Delete</li><li class="duplicate-pin">Duplicate</li><li class="new-pin">Create New</li></ul></div>');
+        $("#pages").append(
+          '<div data-type="' +
+            cType +
+            '" data-emotion="' +
+            cEmotion +
+            '" data-comment="' +
+            cText +
+            '" id="c' +
+            commentPinCount +
+            '" class="cp" draggable="true" style="top:' +
+            posTop +
+            "px; left:" +
+            posLeft +
+            'px;"><p></p><ul><li class="delete-pin">Delete</li><li class="duplicate-pin">Duplicate</li><li class="new-pin">Create New</li></ul></div>'
+        );
         $(document)
           .find(".cp#c" + commentPinCount + ">p")
           .click();
         $("#comments-list>ul").append(
-          '<li data-top="' + posTop + '" data-left="' +  posLeft +'" data-comment="' +cText +'"data-type="' +cType +'" data-emotion="' +cEmotion +'" data-id="c' +commentPinCount +'"><div class="comment-container"><span class="comment-id">' +commentPinCount +'</span><div class="existing-comment-elements"></div><div class="comment-text"><p>' +cText +" </p></div></div></div></li>"
+          '<li data-top="' +
+            posTop +
+            '" data-left="' +
+            posLeft +
+            '" data-comment="' +
+            cText +
+            '"data-type="' +
+            cType +
+            '" data-emotion="' +
+            cEmotion +
+            '" data-id="c' +
+            commentPinCount +
+            '"><div class="comment-container"><span class="comment-id">' +
+            commentPinCount +
+            '</span><div class="existing-comment-elements"></div><div class="comment-text"><p>' +
+            cText +
+            " </p></div></div></div></li>"
         );
         sortComments("c" + commentPinCount);
         // flori: update total comment count and typebar
@@ -537,15 +571,20 @@
         }
         // flori: add custom comment title to custom comment
         addCustomDropdown();
-        // flori: update emotions and type panel 
+        // flori: update emotions and type panel
         typeBar();
         updateEmotionsPanel();
-        
       }
-      
+
       if ($(elem).hasClass("re")) {
         $("#pages").append(
-          '<div id="r' + redactPinCount + '" class="rp" draggable="true" style="top:' + posTop + "px; left:" + posLeft + 'px;"><ul><li class="delete-redactor">Delete</li><li class="duplicate-redactor">Duplicate</li></ul></div>'
+          '<div id="r' +
+            redactPinCount +
+            '" class="rp" draggable="true" style="top:' +
+            posTop +
+            "px; left:" +
+            posLeft +
+            'px;"><ul><li class="delete-redactor">Delete</li><li class="duplicate-redactor">Duplicate</li></ul></div>'
         );
         redactPinCount++;
       }
@@ -564,13 +603,15 @@
     });
     $(document).on("click", ".cp>p", function () {
       var $this = $(this).parent();
-      $('#comments-list ul li').each(function() {
-        $(this).find('.comment-id').removeClass('active');
+      $("#comments-list ul li").each(function () {
+        $(this).find(".comment-id").removeClass("active");
       });
       $(".cp").removeClass("focused");
       $($this).addClass("focused");
       // flori: add blue background to active comment id
-      $('#comments-list ul li[data-id="' + $this.attr('id') + '"]').find('.comment-id').addClass('active');
+      $('#comments-list ul li[data-id="' + $this.attr("id") + '"]')
+        .find(".comment-id")
+        .addClass("active");
       $(document)
         .find(
           '#selected-emotion > ul li[data-id="' +
@@ -605,10 +646,10 @@
           $("#editor").offset().top +
           parseInt($(".cp#" + $(this).attr("data-id")).css("top"), 10) -
           200,
-      }); 
+      });
       // 200 = 116(height from body top to pages/editor top is 116) + 84(scroll to 84px above the pin)
       // flori: add blue background to active comment pin
-      $(this).find('.comment-id').addClass('active');
+      $(this).find(".comment-id").addClass("active");
     });
     $(document).on("input", "#comment-input textarea", function () {
       if ($(".cp.focused").length == 1) {
@@ -623,7 +664,11 @@
           '#comments-list [data-id="' + $(".cp.focused").attr("id") + '"] > p'
         ).text($(this).val());
         // flori: update custom comment text when typing in input area
-        $('#comments-list [data-id="' + $(".cp.focused").attr("id") + '"] .comment-text > p').text($(this).val());
+        $(
+          '#comments-list [data-id="' +
+            $(".cp.focused").attr("id") +
+            '"] .comment-text > p'
+        ).text($(this).val());
         managePin($(".cp.focused").attr("id"), "updateComment", $(this).val());
       }
       if ($(this).val().trim() == "") {
@@ -677,23 +722,33 @@
       $(this).parents(".custom-comment-title").toggleClass("active");
     });
     // flori: add dropdown functions to custom comment
-    $(document).on("click", ".custom-comment-title li:not(.active)", function () {
-      var $this = $(this);
-      var commentTitle = $this.closest('.custom-comment-title');
-      var parentID = $this.closest('li[data-id]').attr('data-id');
-      var dataTypeClicked = $this.attr('data-type');
+    $(document).on(
+      "click",
+      ".custom-comment-title li:not(.active)",
+      function () {
+        var $this = $(this);
+        var commentTitle = $this.closest(".custom-comment-title");
+        var parentID = $this.closest("li[data-id]").attr("data-id");
+        var dataTypeClicked = $this.attr("data-type");
 
-      $('.custom-comment-title li').removeClass('active');
-      $this.addClass('active');
-      $this.closest('li[data-id]').filter('[data-id="' + parentID + '"]').find('.custom-comment-title > p').text($this.text());
-      $this.closest('li[data-id]').filter('[data-id="' + parentID + '"]').attr('data-type',dataTypeClicked);
+        $(".custom-comment-title li").removeClass("active");
+        $this.addClass("active");
+        $this
+          .closest("li[data-id]")
+          .filter('[data-id="' + parentID + '"]')
+          .find(".custom-comment-title > p")
+          .text($this.text());
+        $this
+          .closest("li[data-id]")
+          .filter('[data-id="' + parentID + '"]')
+          .attr("data-type", dataTypeClicked);
 
-      $this.parents('.comment-container').attr('data-type',dataTypeClicked);
-      commentTitle.attr('data-type',dataTypeClicked);
-      
-      $('div[id="' + parentID + '"]').attr('data-type',dataTypeClicked);
-      commentTitle.toggleClass('active');
-      typeBar();
+        $this.parents(".comment-container").attr("data-type", dataTypeClicked);
+        commentTitle.attr("data-type", dataTypeClicked);
+
+        $('div[id="' + parentID + '"]').attr("data-type", dataTypeClicked);
+        commentTitle.toggleClass("active");
+        typeBar();
       }
     );
     // flori: toggle active class for sort-by dropdown
@@ -876,9 +931,25 @@
       $(document)
         .find(".cp#c" + commentPinCount + ">p")
         .click();
-        // flori: edit* append the comment bubble with updated html when duplicate/add new pin
+      // flori: edit* append the comment bubble with updated html when duplicate/add new pin
       $("#comments-list>ul").append(
-        '<li data-top="' + posTop + '" data-left="' +  posLeft +'" data-comment="' +cText +'"data-type="' + cType +'" data-emotion="' +cEmotion +'" data-id="c' +commentPinCount +'"><div class="comment-container"><span class="comment-id">' +commentPinCount +'</span><div class="existing-comment-elements"></div><div class="comment-text"><p>' +cText +" </p></div></div></div></li>"
+        '<li data-top="' +
+          posTop +
+          '" data-left="' +
+          posLeft +
+          '" data-comment="' +
+          cText +
+          '"data-type="' +
+          cType +
+          '" data-emotion="' +
+          cEmotion +
+          '" data-id="c' +
+          commentPinCount +
+          '"><div class="comment-container"><span class="comment-id">' +
+          commentPinCount +
+          '</span><div class="existing-comment-elements"></div><div class="comment-text"><p>' +
+          cText +
+          " </p></div></div></div></li>"
       );
       sortComments("c" + commentPinCount);
       // flori: update total comment count
@@ -1053,7 +1124,21 @@
       if (pinId >= commentPinCount) {
         commentPinCount = pinId + 1;
       }
-      $("#pages").append(`<div data-type="` + v.type +`" data-emotion="` +v.emotion +`" data-comment="` +v.text +`" id="c` +pinId +`" class="cp" draggable="true" style="top:` +v.top +`px; left:` +v.left +`px;"> <p>` +pinId +
+      $("#pages").append(
+        `<div data-type="` +
+          v.type +
+          `" data-emotion="` +
+          v.emotion +
+          `" data-comment="` +
+          v.text +
+          `" id="c` +
+          pinId +
+          `" class="cp" draggable="true" style="top:` +
+          v.top +
+          `px; left:` +
+          v.left +
+          `px;"> <p>` +
+          pinId +
           `</p>
                 <ul>
                     <li class="delete-pin">Delete</li>
@@ -1333,18 +1418,6 @@
     return id;
   }
 
-  // Aadya's Code: Start
-  function getTypeId(type) { // returns the order of the type in the json obj of types
-    var id = 0;
-    $.each(typeList, function(i, v) {
-        if (type == v) {
-            id = i;
-        }
-    });
-    return id;
-}
-// Aadya's Code: End
-
   function getNextComment(groupName, latestCommentId) {
     // return the next available comment from a comment group to replace the comment template that has just been dragged onto the editor from the sidebar
     $.each(quickComments, function (i, v) {
@@ -1505,34 +1578,6 @@
       });
   }
 
-  // aadya: code for type api and automated categorizing
-  function fetchType(comment_text, onSuccess, onFail) {
-    $.ajax(SERVER_URL + '/type', {
-        'data': JSON.stringify({ text: comment_text }),
-        'type': 'POST',
-        'contentType': 'application/json'
-    }).done(function(data) {
-        var type = null;
-        // console.log(data);
-        var type_list = data['type_classes'];
-        // console.log(type_list);
-        if (type_list.length == 0) {
-            console.log("Request successful but no emotion labeled");
-        } else {
-            // Take the first emotion returned by the API and map it to emotion category i.e. remove +/- if present
-            type = type_list[0];
-            
-            // console.log(type);
-            // console.log(type_list[0]);
-        }
-        onSuccess(type);
-    }).fail(function(jqXHR, textStatus, errorThrown) {
-        console.log("type api request: ", jqXHR['responseJSON'])
-        onFail();
-    })
-}
-// End of aadya's code
-
   var prevEmotQueryText = "";
 
   function refreshEmotion() {
@@ -1540,7 +1585,10 @@
     if (comment_text == "") {
       emotion = "neutral";
       $(document)
-        .find('#selected-emotion > ul li[data-id="' + getEmotionId(emotion) + '"]').click();
+        .find(
+          '#selected-emotion > ul li[data-id="' + getEmotionId(emotion) + '"]'
+        )
+        .click();
     } else if (comment_text != prevEmotQueryText) {
       // console.log('fetching new emotion')
       var old_class = $("#robot-emotions").attr("class");
@@ -1551,131 +1599,124 @@
           if (emotion == null) {
             emotion = "neutral";
           }
-          $(document).find('#selected-emotion > ul li[data-id="' + getEmotionId(emotion) + '"]').click();
+          $(document)
+            .find(
+              '#selected-emotion > ul li[data-id="' +
+                getEmotionId(emotion) +
+                '"]'
+            )
+            .click();
           prevEmotQueryText = comment_text;
         },
         function () {
           $("#robot-emotions").attr("class", old_class);
         }
       );
-      // Aadya's Code
-      fetchType(comment_text, function(type) {
-        if (type == null) {
-            $('[data-id=' + $('#pages .focused').attr('id') + '] .comment-container.has-dropdown ul li[data-type="0"]').click(); 
-        } else {
-          type = type.replace(/\+/g, '').replace(/\-/g, '').trim().toLowerCase();
-          $('[data-id=' + $('#pages .focused').attr('id') + '] .comment-container.has-dropdown ul li[data-type="' + getTypeId(type) + '"]').click(); 
-        }
-        $(".custom-comment-title").removeClass("active");
-    }, function() {
-        $('[data-id=' + $('#pages .focused').attr('id') + '] .comment-container.has-dropdown ul li[data-type="0"]').click(); 
-        $(".custom-comment-title").removeClass("active");
-    });
-    // End of Aadya's Code
     }
   }
 
   // flori: arranges the colors in the type bar
-  function typeBar(){
+  function typeBar() {
     updateTypePanel();
     var typeCommentCount = commentPinCount - 1;
-    $('#comments-list > ul > li').each(function(){
-      if($(this).attr('data-type') == 0){
+    $("#comments-list > ul > li").each(function () {
+      if ($(this).attr("data-type") == 0) {
         typeCommentCount--;
       }
-    })
-    $.each(typePanel, function (i, v) {
-      typePanel[i]['width'] = 0;
     });
-    if(typeCommentCount > 0){
+    $.each(typePanel, function (i, v) {
+      typePanel[i]["width"] = 0;
+    });
+    if (typeCommentCount > 0) {
       $.each(typePanel, function (i, v) {
-        if(i != 0){
-          typePanel[i]['width'] = (v.count/(typeCommentCount))*100;
+        if (i != 0) {
+          typePanel[i]["width"] = (v.count / typeCommentCount) * 100;
         }
       });
     }
     var count = 1;
-    $('#bottom-panel-type-bar > ul > li').each(function(){
-      $(this).css('width',typePanel[count]['width']);
+    $("#bottom-panel-type-bar > ul > li").each(function () {
+      $(this).css("width", typePanel[count]["width"]);
       count++;
-    })
+    });
   }
 
-  // flori: sorts comments list based on active type panel elements
-  function typeBarSort() {
+  // flori: emotions and type bar sort
+  function sortTypeAndEmotions() {
     $(this).toggleClass("active");
     var hide = false;
-    $.each(typePanel, function(i, v) {
+    var hideEmotions = false;
+    var hideType = false;
+    $.each(emotionsPanel, function (i, v) {
       v.show = false;
     });
-    $(".hide-type ul li").each(function () {
-      if ($(this).hasClass('active')) {
-        var dataType = $(this).attr('data-type');
-        typePanel[dataType]['show'] = true;
-        hide = true;
-      }
+    $.each(typePanel, function (i, v) {
+      v.show = false;
     });
-    if(hide){
-      $("#comments-list > ul > li").each(function () {
-        $(this).addClass('temporary-hidden');
-      });
-      $("#comments-list > ul > li").each(function () {
-        var dataType = $(this).attr('data-type');
-        if (typePanel[dataType]['show'] == true) {
-          $(this).removeClass('temporary-hidden');
+
+    if (
+      $(".emoji").hasClass("active") ||
+      $(".hide-type ul li").hasClass("active")
+    ) {
+      $(".hide-type ul li").each(function () {
+        if ($(this).hasClass("active")) {
+          var dataType = $(this).attr("data-type");
+          typePanel[dataType]["show"] = true;
+          hideType = true;
         }
       });
+      $("#bottom-panel-emoji-panel-container ul li").each(function () {
+        if ($(this).hasClass("active")) {
+          var emotion = $(this).attr("data-emotion");
+          emotionsPanel[emotion]["show"] = true;
+          hideEmotions = true;
+        }
+      });
+      hide = true;
     }
-    else{
+
+    if (hide) {
       $("#comments-list > ul > li").each(function () {
-        $(this).removeClass('temporary-hidden');
+        $(this).addClass("temporary-hidden");
+      });
+      $("#comments-list > ul > li").each(function () {
+        var emotion = $(this).attr("data-emotion");
+        var dataType = $(this).attr("data-type");
+        if (hideEmotions) {
+          if (hideType) {
+            if (
+              emotionsPanel[emotion]["show"] == true &&
+              typePanel[dataType]["show"] == true
+            ) {
+              $(this).removeClass("temporary-hidden");
+            }
+          } else {
+            if (emotionsPanel[emotion]["show"]) {
+              $(this).removeClass("temporary-hidden");
+            }
+          }
+        } else if (hideType) {
+          if (typePanel[dataType]["show"] == true) {
+            $(this).removeClass("temporary-hidden");
+          }
+        }
+      });
+    } else {
+      $("#comments-list > ul > li").each(function () {
+        $(this).removeClass("temporary-hidden");
       });
     }
   }
 
-  // flori: sorts comments list based on active emojis
-  function emotionsSort() {
-    $(this).toggleClass("active");
-    var hide = false;
-    $.each(emotionsPanel, function(i, v) {
-      v.show = false;
-    });
-    $("#bottom-panel-emoji-panel-container ul li").each(function () {
-      if ($(this).hasClass('active')) {
-        var emotion = $(this).attr('data-emotion');
-        emotionsPanel[emotion]['show'] = true;
-        hide = true;
-      }
-    });
-    if(hide){
-      $("#comments-list > ul > li").each(function () {
-        $(this).addClass('temporary-hidden');
-      });
-      $("#comments-list > ul > li").each(function () {
-        var emotion = $(this).attr('data-emotion');
-        if (emotionsPanel[emotion]['show']) {
-          $(this).removeClass('temporary-hidden');
-          console.log($(this));
-        }
-      });
-    }
-    else{
-      $("#comments-list > ul > li").each(function () {
-        $(this).removeClass('temporary-hidden');
-      });
-    }
-  }
-  
   // flori: counter that tracks total for each comment type
   function updateTypePanel() {
     $.each(typePanel, function (i, v) {
       v.count = 0;
     });
     $("#comments-list > ul > li").each(function () {
-      if($(this).attr("data-type") == 0){
+      if ($(this).attr("data-type") == 0) {
         typePanel[0]["count"]++;
-      }
-      else{
+      } else {
         typePanel[$(this).attr("data-type")]["count"]++;
       }
     });
@@ -1687,7 +1728,9 @@
     $("#hide-bottom-panel-summary").text("Summary: " + typePanel[1]["count"]);
     $("#hide-bottom-panel-vocab").text("Vocab: " + typePanel[2]["count"]);
     $("#hide-bottom-panel-personal").text("Personal: " + typePanel[3]["count"]);
-    $("#hide-bottom-panel-emotional").text("Emotional: " + typePanel[4]["count"]);
+    $("#hide-bottom-panel-emotional").text(
+      "Emotional: " + typePanel[4]["count"]
+    );
   }
 
   // flori: counter that tracks total for each emotion
@@ -1695,12 +1738,12 @@
     $.each(emotionsPanel, function (i, v) {
       v.count = 0;
     });
-    $.each($("#comments-list > ul > li"), function(){
+    $.each($("#comments-list > ul > li"), function () {
       emotionsPanel[$(this).attr("data-emotion")]["count"]++;
     });
     renderEmotionsPanel();
   }
-  
+
   // flori: renders emotions panel when called in updateEmotionsPanel()
   function renderEmotionsPanel() {
     var containerUl = $("#bottom-panel-emoji-panel-container > ul");
@@ -1709,10 +1752,19 @@
     $.each(emotionsPanel, function (i, v) {
       if (v.count > 0) {
         showCount++;
-        if(showCount < 7){
-          containerUl.append('<li class="emoji" id="' + v.id + '" data-emotion="' + i +'"><span>' + v.count + '</span><div class="hide-emotion">' + v.emote + "</div></li>");
-        }
-        else{
+        if (showCount < 7) {
+          containerUl.append(
+            '<li class="emoji" id="' +
+              v.id +
+              '" data-emotion="' +
+              i +
+              '"><span>' +
+              v.count +
+              '</span><div class="hide-emotion">' +
+              v.emote +
+              "</div></li>"
+          );
+        } else {
           containerUl.append('<li class="hidden-emoji-panel-button"></li>');
         }
       }
@@ -1734,24 +1786,22 @@ function addCustomDropdown() {
 }
 
 // flori: sorts review comments list based on sort-by option
-function checkSortOption(){
-  var commentsList = $('#comments-list > ul');
-  var comments = commentsList.find('li[data-emotion]');
-  var sortedComments = comments.toArray().sort(function(a, b) {
-    var aVal = $(a).find('.comment-id').text();
-    var bVal = $(b).find('.comment-id').text();
+function checkSortOption() {
+  var commentsList = $("#comments-list > ul");
+  var comments = commentsList.find("li[data-emotion]");
+  var sortedComments = comments.toArray().sort(function (a, b) {
+    var aVal = $(a).find(".comment-id").text();
+    var bVal = $(b).find(".comment-id").text();
     var activeOption = $('#sort-by > ul > li[class="active"]').text();
-    if(activeOption == 'Order'){
-      aVal = $(a).find('.comment-id').text();
-      bVal = $(b).find('.comment-id').text();
-    }
-    else if(activeOption == 'Type'){
-     aVal = $(a).attr('data-type');
-     bVal = $(b).attr('data-type');
-    }
-    else if(activeOption == 'Emotion'){
-     aVal = $(a).attr('data-emotion');
-     bVal = $(b).attr('data-emotion');
+    if (activeOption == "Order") {
+      aVal = $(a).find(".comment-id").text();
+      bVal = $(b).find(".comment-id").text();
+    } else if (activeOption == "Type") {
+      aVal = $(a).attr("data-type");
+      bVal = $(b).attr("data-type");
+    } else if (activeOption == "Emotion") {
+      aVal = $(a).attr("data-emotion");
+      bVal = $(b).attr("data-emotion");
     }
     if (aVal < bVal) return -1;
     if (aVal > bVal) return 1;
