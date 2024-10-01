@@ -6,11 +6,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Pathwise - Building Green</title>
     <!-- This snippet is used in production (included from viewer.html) -->
-    <link rel="resource" type="application/l10n" href="locale/locale.properties">
-    <link rel="stylesheet" type="text/css" href="viewer.css">
-    <link rel="stylesheet" type="text/css" href="assets/styles.css">
-    <link rel="icon" type="image/x-icon" href="assets/icons/favicon.png">
-    <script type="text/javascript" src="assets/articles.js"></script>
+    <link rel="resource" type="application/l10n" href="./locale/locale.properties">
+    <link rel="stylesheet" type="text/css" href="./viewer.css">
+    <link rel="stylesheet" type="text/css" href="./assets/styles.css">
+    <link rel="icon" type="image/x-icon" href="./assets/icons/favicon.png">
+    <script type="text/javascript" src="./assets/articles.js"></script>
 </head>
 
 <body>
@@ -199,12 +199,32 @@
                         </ul>
                     </div>
                 </div>
+
+                <div id="recording-options">
+                    <label for="recording-mode">Select Recording Mode:</label>
+                    <select id="recording-mode">
+                        <option value="robot">Robot Recording</option>
+                        <option value="laptop">Laptop Recording</option>
+                    </select>
+                </div>
+                
+                <!-- These buttons will only be visible in Laptop Recording mode -->
+                <div id="laptop-controls" style="display: none;">
+                    <button id="start-stop-recording">Start Recording</button>
+                    <button id="play-laptop-recording" style="display: none;">Play Recording</button>
+                </div>
                 <div id="add-comment">
                     <!-- add comment section with the robot -->
                     <div id="comment-input">
                         <textarea placeholder='"Be sure to take a good look at this part!"'></textarea>
                         <button id="play">Play</button>
+
+                        
                     </div>
+
+                    
+
+
                     <div id="robot-emotions" class="anticipation">
                         <div id="selected-emotion" data-toggler="0">
                             <p>anticipation</p>
@@ -569,11 +589,11 @@
     </div> <!-- outerContainer -->
     <div id="printContainer"></div>
     <input type="file" id="fileInput" class="hidden">
-    <script type="text/javascript" src="assets/jquery-3.6.0.min.js"></script>
-    <script type="text/javascript" src="../build/pdf.js"></script>
-    <script type="text/javascript" src="viewer.js" defer></script>
-    <script type="text/javascript" src="assets/main.js"></script>
-    <script type="text/javascript" src="assets/logging.js"></script>
+    <script type="text/javascript" src="./assets/jquery-3.6.0.min.js"></script>
+    <script type="text/javascript" src="./build/pdf.js"></script>
+    <script type="text/javascript" src="./viewer.js" defer></script>
+    <script type="module" src="./assets/main.js"></script>
+    <script type="text/javascript" src="./assets/logging.js"></script>
 </body>
 
 </html>

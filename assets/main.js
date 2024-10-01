@@ -1,6 +1,30 @@
+import { behaviors } from './behaviours.js';
+import { credentials as GOOGLE_CREDENTIALS } from './google_creds.js';
+
+
 (function($) {
+
+    
     // @TODO replace with server url in production
     var SERVER_URL = 'http://localhost:8000';
+    
+    var misty_IP = '192.168.1.168'
+    let currentCommentId;
+    let recordingInProgress = false;
+    let isReadyToRecord = false;
+    let recordingFilename;
+    let mistyWorker;
+    let isReadyInstructionPlayed = false;
+    let studentDB = {};  
+    $.getJSON('./studentDB.json', function(data) {
+    studentDB = data; 
+    console.log('Loaded studentDB:', studentDB);
+    });
+
+    let laptopRecorder, audioChunks = [];
+    let recordingBlob;
+    let recordingMode = 'robot';  // Default mode
+
     var a1, a2, a3, b1, b2, b3, c1, c2, c3;
     a1 = b2 = c3 = [3, 6, 9, 13, 16, 21, 22, 23, 28, 30];
     a2 = b1 = c2 = [2, 4, 6, 9, 12, 20, 21, 22, 29];
@@ -175,6 +199,35 @@
     $(document).ready(function() {
         preInit();
         init();
+        initWorker();
+        $('#recording-mode').on('change', function() {
+            recordingMode = $(this).val();
+            if (recordingMode === 'laptop') {
+                $('#laptop-controls').show();  // Show laptop controls
+            } else {
+                $('#laptop-controls').hide();  // Hide laptop controls
+            }
+        });
+    
+        // Handle laptop recording start/stop
+        $('#start-stop-recording').on('click', function() {
+            if (!laptopRecorder) {
+                startLaptopRecording();
+            } else {
+                stopLaptopRecording();
+            }
+        });
+    
+        // Play the recorded audio
+        $('#play-laptop-recording').on('click', function() {
+            if (recordingBlob) {
+                const audioUrl = URL.createObjectURL(recordingBlob);
+                const audio = new Audio(audioUrl);
+                audio.play();
+            }
+        });
+
+
         $(document).on('click', '.comments-list-toggle', function() {
             $('main').attr('data-comments-toggle', '0');
             $('#comments-column-toggler').attr('data-toggler', '0');
@@ -548,8 +601,141 @@
             $('#pages').append('<div id="r' + redactPinCount + '" class="rp" draggable="true" style="top:' + posTop + 'px; left:' + posLeft + 'px;"><ul><li class="delete-redactor">Delete</li><li class="duplicate-redactor">Duplicate</li><li class="duplicate-redactor">Duplicate</li></ul></div>');
             redactPinCount++;
         });
+        // $(document).on('click', '#comment-input[data-play="1"] #play', function() {
+        //     say($(this).parent().children('textarea').val().trim());
+        // });
+
+        
+     
+        // $(document).on('click', '.cp', function() {
+        //     var commentId = $(this).attr('id').trim();
+        //     var commentText = $(this).attr('data-comment').trim();
+        //     // var commentEmotion = $(this).attr('data-emotion').trim();
+        //     var commentEmotion = $('#selected-emotion > p').text().trim().toLowerCase();
+            
+        //     // Log or display the clicked comment and its emotion
+        //     console.log('Comment ID:', commentId, 'Text:', commentText, 'Emotion:', commentEmotion);
+        
+        //     // Use the same send logic as in your play button click handler
+        //     var activity = 'play';
+        //     var type = 'SPEAK';
+        
+        //     if (mistyWorker) {
+        //         mistyWorker.postMessage({
+        //             payload: {
+        //                 endpoint: misty_IP,
+        //                 type: type,
+        //                 text: commentText,
+        //                 emotion: commentEmotion,
+        //                 activity: activity
+        //             }
+        //         });
+        //     } else {
+        //         console.error('Worker not initialized');
+        //     }
+        // });
+        
+        function startLaptopRecording() {
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+                laptopRecorder = new MediaRecorder(stream);
+                laptopRecorder.ondataavailable = event => {
+                    audioChunks.push(event.data);
+                };
+                laptopRecorder.onstop = () => {
+                    recordingBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                    audioChunks = [];
+                    $('#play-laptop-recording').show();  // Show play button when recording is ready
+                };
+                laptopRecorder.start();
+                $('#start-stop-recording').text('Stop Recording');
+            }).catch(error => {
+                console.error('Error accessing microphone:', error);
+            });
+        }
+        
+        function stopLaptopRecording() {
+            if (laptopRecorder) {
+                laptopRecorder.stop();
+                laptopRecorder = null;
+                $('#start-stop-recording').text('Start Recording');
+            }
+        }
+
+    // Click event for a comment pin
+    $(document).on('click', '.cp', function() {
+        currentCommentId = $(this).attr('id').trim();
+        const commentText = $(this).attr('data-comment').trim();
+        const commentEmotion = $('#selected-emotion > p').text().trim().toLowerCase();
+    
+        console.log('Comment ID:', currentCommentId, 'Text:', commentText, 'Emotion:', commentEmotion);
+    
+        // Check if there is already a recording for this comment
+        const recordingForComment = getRecordingForComment(currentCommentId);
+    
+        if (mistyWorker) {
+            if (recordingForComment) {
+                // If a recording exists, inform the user about re-recording
+                var speechText = "It seems we did this one already. Press my left bumper to rerecord.";
+                mistyWorker.postMessage({
+                    payload: {
+                        endpoint: misty_IP,
+                        type: 'SPEAK',
+                        text: speechText,
+                        emotion: 'neutral',
+                        activity: 'inform'
+                    }
+                });
+    
+                // Set flag to allow re-recording
+                isReadyInstructionPlayed = true;
+                isReadyToRecord = true;  // Bumpers will now listen for re-recording
+    
+            } else {
+                // If no recording exists, proceed with the usual "I am ready to record" message
+                mistyWorker.postMessage({
+                    payload: {
+                        endpoint: misty_IP,
+                        type: 'SPEAK',
+                        text: commentText,
+                        emotion: commentEmotion,
+                        activity: 'play'
+                    }
+                });
+
+               
+    
+                // Reset the flag and wait for the "I am ready to record" instruction
+                isReadyInstructionPlayed = false;
+                isReadyToRecord = false;
+            }
+        } else {
+            console.error('Worker not initialized');
+        }
+    });
+
+
+    
         $(document).on('click', '#comment-input[data-play="1"] #play', function() {
-            say($(this).parent().children('textarea').val().trim());
+            console.log('play button clicked');
+            
+            var text = $(this).parent().children('textarea').val().trim()
+            var emotion = $('#selected-emotion > p').text().trim().toLowerCase();
+            var activity = 'play';
+            var type = 'SPEAK';
+            
+            if (mistyWorker) {
+                mistyWorker.postMessage({
+                    payload: {
+                         endpoint: misty_IP,
+                        type: type,
+                        text: text,
+                        emotion: emotion,
+                        activity: activity
+                    }
+                });
+            } else {
+                console.error('Worker not initialized');
+            }
         });
 
         // $('#emotion-button').on('click', function() {
@@ -722,6 +908,150 @@
         }
     }
 
+    function initWorker() {
+        mistyWorker = new Worker("/assets/mistyWorker.js");
+
+    mistyWorker.postMessage({
+        credentials: GOOGLE_CREDENTIALS,  // Send Google credentials
+        behaviorsData: behaviors,         // Send behaviors data
+        payload: {
+            endpoint: misty_IP,
+            type: 'CONNECT',  
+            text: 'Hello',
+            emotion: 'joy',
+            activity: 'hi'
+        }
+    });
+
+    mistyWorker.onmessage = handleWorkerMessage;
+}
+
+function handleBumpSensor(bumpSensor) {
+    if (isReadyToRecord && bumpSensor === 'LeftBumper') {
+        if (!recordingInProgress) {
+            // Start recording and pass currentCommentId
+            console.log('Starting recording for comment:', currentCommentId);
+            mistyWorker.postMessage({
+                payload: {
+                    endpoint: misty_IP,
+                    type: 'RECORD_AUDIO',
+                    commentId: currentCommentId  
+                }
+            });
+            recordingInProgress = true;
+        } else {
+            // Stop recording
+            console.log('Stopping recording');
+            mistyWorker.postMessage({
+                payload: {
+                    endpoint: misty_IP,
+                    type: 'STOP_RECORD_AUDIO'
+                }
+            });
+            recordingInProgress = false;
+        }
+    } else if (isReadyToRecord && bumpSensor === 'RightBumper') {
+        // Play the recording for the comment
+        const recordingForComment = getRecordingForComment(currentCommentId);
+        if (recordingForComment) {
+            console.log('Playing recording for comment:', currentCommentId);
+            mistyWorker.postMessage({
+                payload: {
+                    endpoint: misty_IP,
+                    type: 'PLAY_AUDIO',
+                    filename: recordingForComment
+                }
+            });
+        } else {
+            // If no recording is available, inform the user
+            console.log('No recording available for this comment.');
+            mistyWorker.postMessage({
+                payload: {
+                    endpoint: misty_IP,
+                    type: 'SPEAK',
+                    text: 'There are no recordings for this exercise. Press my left bumper to start recording.',
+                    emotion: 'neutral',
+                    activity: 'inform'
+                }
+            });
+        }
+    }
+}
+
+function getRecordingForComment(commentId) {
+    return studentDB[commentId]?.recording || null;  // Fetch the recording or return null if not found
+}
+
+function saveRecordingForComment(commentId, filename) {
+    if (!studentDB[commentId]) {
+        studentDB[commentId] = {};  // Create a new entry if it doesn't exist
+    }
+    studentDB[commentId].recording = filename;  // Assign the recording filename to the comment
+
+    console.log(`Saved recording for comment ${commentId}: ${filename}`);
+
+    // If needed, display or log the updated studentDB
+    console.log('Updated studentDB:', studentDB);
+}
+
+
+function handleWorkerMessage(event) {
+    const { success, data, type, audioFilename, sensor } = event.data;
+
+    if (success) {
+        if (type === 'AUDIO_COMPLETE') {
+            if(recordingMode==='laptop'){
+                return;
+            }
+
+            if (!isReadyInstructionPlayed) {
+                // If there was no existing recording, play the "I am ready to record" message
+                setTimeout(() => {
+                    var speechText = "I am ready to record. Press my left bumper to start recording.";
+                    mistyWorker.postMessage({
+                        payload: {
+                            endpoint: misty_IP,
+                            type: 'SPEAK',
+                            text: speechText,
+                            emotion: 'neutral',
+                            activity: 'inform'
+                        }
+                    });
+
+                    isReadyInstructionPlayed = true;
+                    isReadyToRecord = true;  // Bumpers will now listen after this message
+                    console.log("Bumpers are now listening.");
+                }, 3000);
+            } else {
+                isReadyToRecord = true;  // Bumpers listen after the final message
+            }
+        } else if (type === 'RECORDING_STARTED') {
+            console.log(`Recording started: ${audioFilename}`);
+            recordingFilename = audioFilename;
+        } else if (type === 'RECORDING_STOPPED') {
+            console.log('Recording stopped');
+            saveRecordingForComment(currentCommentId, recordingFilename);
+
+            // After recording stops, provide instructions for re-recording or playback
+            const speechText = "If you want to record again, press my left bumper. If you want to play the recording, press my right bumper.";
+            mistyWorker.postMessage({
+                payload: {
+                    endpoint: misty_IP,
+                    type: 'SPEAK',
+                    text: speechText,
+                    emotion: 'neutral',
+                    activity: 'inform'
+                }
+            });
+
+            isReadyToRecord = false;  // Temporarily disable bumpers
+        } else if (type === 'BUMP_SENSOR') {
+            handleBumpSensor(sensor);  // Handle bumper interaction
+        }
+    }
+}
+
+
     function shuffle(array) {
         var tmp, current, top = array.length;
         if (top)
@@ -842,18 +1172,18 @@
         $('#comment-input[data-play]').removeAttr('data-play');
     }
 
-    function say(m) { // create and play audio demos for comments to create 
-        var msg = new SpeechSynthesisUtterance();
-        var voices = window.speechSynthesis.getVoices();
-        msg.voice = voices[1];
-        msg.voiceURI = "native";
-        msg.volume = 1;
-        msg.rate = 0.9;
-        msg.pitch = 1.4;
-        msg.text = m;
-        msg.lang = 'en-US';
-        speechSynthesis.speak(msg);
-    }
+    // function say(m) { // create and play audio demos for comments to create 
+    //     var msg = new SpeechSynthesisUtterance();
+    //     var voices = window.speechSynthesis.getVoices();
+    //     msg.voice = voices[1];
+    //     msg.voiceURI = "native";
+    //     msg.volume = 1;
+    //     msg.rate = 0.9;
+    //     msg.pitch = 1.4;
+    //     msg.text = m;
+    //     msg.lang = 'en-US';
+    //     speechSynthesis.speak(msg);
+    // }
 
     function managePin(id, action, value) { // update contents: messages, pin number, emotion etc for each selected comment pins
         $.each(pins, function(i, v) {
