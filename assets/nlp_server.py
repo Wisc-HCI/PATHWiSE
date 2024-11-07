@@ -10,6 +10,7 @@ from collections import deque
 import asyncio
 from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
+import difflib
 
 logging.basicConfig(
     level=logging.INFO,
@@ -45,13 +46,13 @@ intent_categories = {
         "Nothing more to add",
         "Let's move on"
     ],
-    "uncertain": [
-        "I'm not sure",
-        "Maybe",
-        "I might have something",
-        "I need to think about it",
-        "Give me a moment"
-    ]
+    # "uncertain": [
+    #     "I'm not sure",
+    #     "Maybe",
+    #     "I might have something",
+    #     "I need to think about it",
+    #     "Give me a moment"
+    # ]
 }
 
 intent_embeddings = {
@@ -76,6 +77,15 @@ MIN_AUDIO_SIZE = 2048
 SPEECH_TIMEOUT = 3.0
 SILENCE_RMS_WINDOW = 5
 
+def merge_text(previous_text, new_text):
+    matcher = difflib.SequenceMatcher(None, previous_text, new_text)
+    match = matcher.find_longest_match(0, len(previous_text), 0, len(new_text))
+    
+    if match.size > 0:
+        return previous_text[:match.a] + new_text[match.b:]
+    else:
+        return previous_text + " " + new_text
+
 class AudioBuffer:
     def __init__(self, maxlen=BUFFER_SIZE):
         self.buffer = deque(maxlen=maxlen)
@@ -87,6 +97,7 @@ class AudioBuffer:
         self.silence_threshold_db = None
         self.is_calibrated = False
         self.calibration_samples = []
+        self.last_recognized_text = ""
 
     def add(self, audio_data):
         self.buffer.append(audio_data)
@@ -177,13 +188,16 @@ async def nlp_server(websocket, path):
                             result = json.loads(local_recognizer.Result())
                             if result.get('text'):
                                 current_text = result['text']
-                                if current_text != last_transcript:
-                                    logging.info(f"Recognized: {current_text}")
+                                merged_text = merge_text(audio_buffer.last_recognized_text, current_text)
+                                deduped_text = ' '.join(dict.fromkeys(merged_text.split()))
+                                
+                                if deduped_text != audio_buffer.last_recognized_text:
+                                    logging.info(f"Recognized: {deduped_text}")
                                     await websocket.send(json.dumps({
                                         'type': 'speech_recognized',
-                                        'result': {'text': current_text}
+                                        'result': {'text': deduped_text}
                                     }))
-                                    last_transcript = current_text
+                                    audio_buffer.last_recognized_text = deduped_text
                                 is_speaking = True
 
                     if not is_silent:
@@ -217,6 +231,7 @@ async def nlp_server(websocket, path):
                             local_recognizer = KaldiRecognizer(vosk_model, 16000)
                             last_transcript = ""
                             silence_start_time = None
+                            audio_buffer.last_recognized_text = ""
 
             except Exception as e:
                 logging.error(f"Error processing message: {e}")

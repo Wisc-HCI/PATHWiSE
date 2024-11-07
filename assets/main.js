@@ -11,7 +11,8 @@ class ConversationManager {
             TRANSITIONING: 'transitioning',
             LISTENING: 'listening',
             CONFIRMING: 'confirming',
-            PROCESSING: 'processing'
+            PROCESSING: 'processing',
+            PAUSED: 'paused'
         };
         this.currentState = this.states.IDLE;
         this.isRecording = false;
@@ -24,6 +25,7 @@ class ConversationManager {
         this.isMistySpeaking = false;
         this.noResponseTimeout = null;
         this.noResponseDuration = 10000; // 10 seconds
+        this.pausedResponseDuration = 60000; // 1 minute
         this.fullRecording = [];
     }
 
@@ -49,7 +51,7 @@ class ConversationManager {
         console.log('Beginning conversation:', { commentId, text, emotion });
         this.currentCommentId = commentId;
         await this.setState(this.states.SPEAKING);
-        await this.speak(text);
+        await this.speak(text,emotion);
         await this.setState(this.states.LISTENING);
     }
 
@@ -70,7 +72,9 @@ class ConversationManager {
                 await this.startListening();
                 break;
             case this.states.IDLE:
+            case this.states.PAUSED:
                 await this.stopListening();
+                this.clearAllTimeouts();
                 break;
         }
 
@@ -132,9 +136,10 @@ class ConversationManager {
 
     startNoResponseTimer() {
         this.clearNoResponseTimer();
+        const duration = this.currentState === this.states.PAUSED ? this.pausedResponseDuration : this.noResponseDuration;
         this.noResponseTimeout = setTimeout(() => {
             this.handleNoResponse();
-        }, this.noResponseDuration);
+        }, duration);
     }
 
     clearNoResponseTimer() {
@@ -144,10 +149,20 @@ class ConversationManager {
         }
     }
 
+    clearAllTimeouts() {
+        this.clearNoResponseTimer();
+        // Clear any other timeouts you might have
+    }
+
     async handleNoResponse() {
         console.log('No response detected');
-        await this.speak("It seems like nobody's here. Let me know when you're ready to continue.");
-        await this.setState(this.states.IDLE);
+        if (this.currentState === this.states.PAUSED) {
+            await this.speak("I'm still here if you need more time to think. Just let me know when you're ready.");
+            this.startNoResponseTimer(); // Restart the timer for the paused state
+        } else {
+            await this.speak("It seems like nobody's here. Let me know when you're ready to continue.");
+            await this.setState(this.states.IDLE);
+        }
     }
 
     async handleServerResponse(response) {
@@ -181,19 +196,20 @@ class ConversationManager {
         }
     }
 
-    getEmotionForState() {
+    getEmotionForState(emotion) {
         const emotions = {
-            [this.states.SPEAKING]: 'interest',
+            [this.states.SPEAKING]: emotion,
             [this.states.TRANSITIONING]: 'anticipation',
             [this.states.LISTENING]: 'anticipation',
             [this.states.CONFIRMING]: 'trust',
             [this.states.PROCESSING]: 'anticipation',
-            [this.states.IDLE]: 'default'
+            [this.states.IDLE]: 'default',
+            [this.states.PAUSED]: 'trust'
         };
         return emotions[this.currentState] || 'default';
     }
 
-    async speak(text) {
+    async speak(text,emotion) {
         return new Promise((resolve) => {
             if (!this.mistyWorker) {
                 resolve();
@@ -206,7 +222,7 @@ class ConversationManager {
                     this.isMistySpeaking = false;
                     await this.setState(this.states.TRANSITIONING);
                     setTimeout(async () => {
-                        if (this.currentState !== this.states.IDLE) {
+                        if (this.currentState !== this.states.IDLE && this.currentState !== this.states.PAUSED) {
                             await this.setState(this.states.LISTENING);
                         }
                         resolve();
@@ -221,7 +237,7 @@ class ConversationManager {
                     endpoint: this.mistyIP,
                     type: 'SPEAK',
                     text: text,
-                    emotion: this.getEmotionForState(),
+                    emotion: this.getEmotionForState(emotion),
                     activity: 'speak'
                 }
             });
@@ -240,8 +256,9 @@ class ConversationManager {
                 await this.setState(this.states.IDLE);
                 break;
             case 'uncertain':
-                await this.speak("Okie Dokie! We'll move on when you're ready.");
-                await this.setState(this.states.CONFIRMING);
+                await this.speak("Take your time. If you think of anything, just let me know. Otherwise, we can move on when you're ready.");
+                await this.setState(this.states.PAUSED);
+                this.startNoResponseTimer(); // Start the longer timer for the paused state
                 break;
         }
     }
@@ -272,7 +289,7 @@ class ConversationManager {
             setTimeout(() => {
                 clearInterval(checkTranscript);
                 resolve(null);
-            }, this.noResponseDuration);
+            }, this.currentState === this.states.PAUSED ? this.pausedResponseDuration : this.noResponseDuration);
         });
     }
 
@@ -329,12 +346,13 @@ class ConversationManager {
     }
 }
 
+
 (function($) {
 
     // @TODO replace with server url in production
     var SERVER_URL = 'http://localhost:8000';
     
-    var misty_IP = '192.168.1.168'
+    var misty_IP = '10.134.71.204'
     let currentCommentId;
     let recordingInProgress = false;
     let isReadyToRecord = false;
@@ -1018,11 +1036,11 @@ class ConversationManager {
     
         const commentId = $(this).attr('id').trim();
         const commentText = $(this).attr('data-comment').trim();
-        const commentEmotion = $('#selected-emotion > p').text().trim().toLowerCase();
+        var emotion = $('#selected-emotion > p').text().trim().toLowerCase();
         
-        console.log('Starting conversation:', { commentId, commentText, commentEmotion });
+        console.log('Starting conversation:', { commentId, commentText, emotion });
         
-        window.conversationManager.beginConversation(commentId, commentText, commentEmotion);
+        window.conversationManager.beginConversation(commentId, commentText, emotion);
     });
 
     

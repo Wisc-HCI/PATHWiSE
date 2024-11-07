@@ -10,7 +10,7 @@ self.onerror = function(error) {
 };
 console.log("Worker started");
 
-let currentVolume = 40;
+let currentVolume = 20;
 let behaviors = {};
 let GOOGLE_CREDENTIALS = {};
 
