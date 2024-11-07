@@ -3,6 +3,13 @@
 // import { credentials as GOOGLE_CREDENTIALS } from "./google_creds.js";
 // import { behaviors } from "./behaviours.js"
 
+self.postMessage({ type: 'LOADED' });
+
+self.onerror = function(error) {
+    console.error("Worker internal error:", error);
+};
+console.log("Worker started");
+
 let currentVolume = 40;
 let behaviors = {};
 let GOOGLE_CREDENTIALS = {};

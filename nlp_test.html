@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>NLP Server Test Environment</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+
+        .controls {
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 10px 20px;
+            margin-right: 10px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .status-box {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            background-color: #f0f0f0;
+        }
+
+        #calibration-status {
+            display: none;
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        #silence-alert {
+            display: none;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            padding: 10px;
+            margin: 10px 0;
+        }
+
+        #recognized-text {
+            min-height: 100px;
+            max-height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            white-space: pre-wrap;
+        }
+
+        .db-meter {
+            width: 100%;
+            height: 20px;
+            background-color: #eee;
+            margin: 10px 0;
+            position: relative;
+        }
+
+        .db-level {
+            height: 100%;
+            width: 0%;
+            background-color: #4CAF50;
+            transition: width 0.1s ease;
+        }
+
+        .error {
+            color: #721c24;
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            padding: 10px;
+            margin: 10px 0;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>NLP Server Test Environment</h1>
+
+    <div id="calibration-status" class="status-box">
+        Calibrating background noise... Please remain quiet.
+        <div class="countdown"></div>
+    </div>
+
+    <div class="controls">
+        <button id="startBtn" disabled>Start Recording</button>
+        <button id="stopBtn" disabled>Stop Recording</button>
+    </div>
+
+    <div id="status" class="status-box">
+        WebSocket Status: <span id="ws-status">Connecting...</span>
+    </div>
+
+    <div id="audio-levels">
+        <p>Audio Levels:</p>
+        <div class="db-meter">
+            <div class="db-level"></div>
+        </div>
+        <div id="db-value">Current: 0 dB</div>
+        <div id="threshold-value">Threshold: N/A</div>
+    </div>
+
+    <div id="state" class="status-box">
+        Current State: <span id="recording-state">Idle</span>
+    </div>
+
+    <div id="transcript">
+        <h3>Transcript:</h3>
+        <div id="recognized-text"></div>
+    </div>
+
+    <div id="silence-alert">
+        Silence Detected!
+    </div>
+
+    <div id="error" class="error"></div>
+
+    <script>
+        let socket;
+        let isRecording = false;
+        let mediaStream = null;
+        let audioContext = null;
+        let processor = null;
+        let isCalibrating = false;
+        let silenceThreshold = null;
+
+        // Initialize WebSocket connection
+        function connect() {
+            socket = new WebSocket('ws://localhost:8765');
+            
+            socket.onopen = () => {
+                document.getElementById('ws-status').textContent = 'Connected';
+                document.getElementById('startBtn').disabled = false;
+                console.log('WebSocket connected');
+            };
+            
+            socket.onclose = () => {
+                document.getElementById('ws-status').textContent = 'Disconnected';
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = true;
+                console.log('WebSocket disconnected');
+                setTimeout(connect, 5000);
+            };
+            
+            socket.onmessage = handleMessage;
+        }
+
+        function handleMessage(event) {
+            const data = JSON.parse(event.data);
+            console.log('Received:', data);
+
+            switch(data.type) {
+                case 'calibration_start':
+                    isCalibrating = true;
+                    document.getElementById('calibration-status').style.display = 'block';
+                    document.getElementById('recording-state').textContent = 'Calibrating';
+                    startCalibrationCountdown(3); // 3 seconds countdown
+                    break;
+
+                case 'calibration_complete':
+                    isCalibrating = false;
+                    document.getElementById('calibration-status').style.display = 'none';
+                    document.getElementById('recording-state').textContent = 'Ready';
+                    document.getElementById('threshold-value').textContent = 
+                        `Threshold: ${data.threshold_db.toFixed(2)} dB`;
+                    silenceThreshold = data.threshold_db;
+                    break;
+
+                case 'speech_recognized':
+                    if (data.result && data.result.text) {
+                        const transcriptDiv = document.getElementById('recognized-text');
+                        transcriptDiv.textContent += data.result.text + '\n';
+                        transcriptDiv.scrollTop = transcriptDiv.scrollHeight;
+                    }
+                    break;
+
+                case 'silence_detected':
+                    const silenceAlert = document.getElementById('silence-alert');
+                    silenceAlert.style.display = 'block';
+                    setTimeout(() => {
+                        silenceAlert.style.display = 'none';
+                    }, 2000);
+                    break;
+            }
+        }
+
+        function startCalibrationCountdown(seconds) {
+            const countdownDiv = document.querySelector('#calibration-status .countdown');
+            let timeLeft = seconds;
+            
+            const countdown = setInterval(() => {
+                countdownDiv.textContent = `${timeLeft} seconds remaining...`;
+                timeLeft--;
+                
+                if (timeLeft < 0) {
+                    clearInterval(countdown);
+                    countdownDiv.textContent = '';
+                }
+            }, 1000);
+        }
+
+        async function startRecording() {
+            try {
+                mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                    audio: { 
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true
+                    }
+                });
+                
+                audioContext = new AudioContext({ sampleRate: 16000 });
+                const source = audioContext.createMediaStreamSource(mediaStream);
+                processor = audioContext.createScriptProcessor(4096, 1, 1);
+                
+                source.connect(processor);
+                processor.connect(audioContext.destination);
+                
+                processor.onaudioprocess = (e) => {
+                    const inputData = e.inputBuffer.getChannelData(0);
+                    const pcmData = new Int16Array(inputData.length);
+                    
+                    for (let i = 0; i < inputData.length; i++) {
+                        pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+                    }
+                    
+                    // Calculate and display current dB level
+                    const rms = Math.sqrt(inputData.reduce((sum, x) => sum + x * x, 0) / inputData.length);
+                    const db = 20 * Math.log10(Math.max(rms, 1e-10));
+                    updateDBMeter(db);
+                    
+                    if (socket.readyState === WebSocket.OPEN) {
+                        const base64data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
+                        socket.send(JSON.stringify({
+                            type: 'audio_data',
+                            audio: base64data
+                        }));
+                    }
+                };
+                
+                isRecording = true;
+                document.getElementById('startBtn').disabled = true;
+                document.getElementById('stopBtn').disabled = false;
+                document.getElementById('recording-state').textContent = isCalibrating ? 'Calibrating' : 'Recording';
+                
+            } catch (error) {
+                console.error('Error starting recording:', error);
+                document.getElementById('error').textContent = 'Error starting recording: ' + error.message;
+                document.getElementById('error').style.display = 'block';
+            }
+        }
+
+        function stopRecording() {
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(track => track.stop());
+            }
+            if (audioContext) {
+                audioContext.close();
+            }
+            
+            isRecording = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('stopBtn').disabled = true;
+            document.getElementById('recording-state').textContent = 'Idle';
+        }
+
+        function updateDBMeter(db) {
+            // Normalize dB value for meter display (-60dB to 0dB range)
+            const normalizedDb = Math.max(0, Math.min(100, (db + 60) * (100/60)));
+            document.querySelector('.db-level').style.width = `${normalizedDb}%`;
+            document.getElementById('db-value').textContent = `Current: ${db.toFixed(2)} dB`;
+        }
+
+        // Event listeners
+        document.getElementById('startBtn').addEventListener('click', startRecording);
+        document.getElementById('stopBtn').addEventListener('click', stopRecording);
+
+        // Initialize connection
+        connect();
+    </script>
+</body>
+</html>

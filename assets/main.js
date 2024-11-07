@@ -1,10 +1,260 @@
 import { behaviors } from './behaviours.js';
 import { credentials as GOOGLE_CREDENTIALS } from './google_creds.js';
 
+class ConversationManager {
+    constructor(mistyWorker, mistyIP) {
+        this.mistyWorker = mistyWorker;
+        this.mistyIP = mistyIP;
+        // Add more granular states
+        this.states = {
+            IDLE: 'idle',
+            SPEAKING: 'speaking',          // Misty is speaking
+            TRANSITIONING: 'transitioning', // Buffer state between speaking and listening
+            LISTENING: 'listening',         // Actively listening for user response
+            CONFIRMING: 'confirming',       // Waiting for yes/no after asking for more
+            PROCESSING: 'processing'        // Processing user response
+        };
+        this.currentState = this.states.IDLE;
+        this.isRecording = false;
+        this.audioContext = null;
+        this.mediaStream = null;
+        this.processor = null;
+        this.lastTranscript = "";
+        this.ws = null;
+        this.setupWebSocket();
+    }
+    setupWebSocket() {
+        console.log('Setting up WebSocket connection...');
+        this.ws = new WebSocket('ws://localhost:8765');
+        
+        this.ws.onopen = () => {
+            console.log('WebSocket connected');
+        };
+        
+        this.ws.onmessage = async (event) => {
+            const response = JSON.parse(event.data);
+            console.log('Server response:', response);
+            await this.handleServerResponse(response);
+        };
+        
+        this.ws.onerror = (error) => console.error('WebSocket error:', error);
+        
+        this.ws.onclose = () => {
+            console.log('WebSocket closed, reconnecting...');
+            setTimeout(() => this.setupWebSocket(), 5000);
+        };
+    }
+
+    async beginConversation(commentId, text, emotion) {
+        console.log('Beginning conversation:', { commentId, text, emotion });
+        this.currentCommentId = commentId;
+        
+        // First, switch to speaking state
+        await this.setState(this.states.SPEAKING);
+        
+        // Have Misty speak the text
+        await this.speak(text);
+    }
+
+    async setState(newState) {
+        console.log(`State transition: ${this.currentState} -> ${newState}`);
+        this.currentState = newState;
+
+        // Handle state-specific actions
+        switch (newState) {
+            case this.states.SPEAKING:
+                await this.stopListening();  // Ensure we're not listening while speaking
+                break;
+                
+            case this.states.TRANSITIONING:
+                // Clear any lingering audio state
+                if (this.isRecording) {
+                    await this.stopListening();
+                }
+                break;
+                
+            case this.states.LISTENING:
+                await this.startListening();
+                break;
+                
+            case this.states.IDLE:
+                await this.stopListening();
+                break;
+        }
+
+        // Update Misty's behavior
+        if (this.mistyWorker) {
+            this.mistyWorker.postMessage({
+                payload: {
+                    endpoint: this.mistyIP,
+                    type: 'BEHAVIOR',
+                    emotion: this.getEmotionForState(),
+                    activity: this.currentState
+                }
+            });
+        }
+    }
+
+    async startListening() {
+        try {
+            console.log('Starting audio recording...');
+            this.isRecording = true;
+            this.lastTranscript = "";
+            
+            this.mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                audio: { 
+                    echoCancellation: true,
+                    noiseSuppression: true,
+                    autoGainControl: true
+                }
+            });
+            
+            this.audioContext = new AudioContext({ sampleRate: 16000 });
+            const source = this.audioContext.createMediaStreamSource(this.mediaStream);
+            this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
+            
+            source.connect(this.processor);
+            this.processor.connect(this.audioContext.destination);
+            
+            this.processor.onaudioprocess = (e) => {
+                if (!this.isRecording) return;
+                
+                const inputData = e.inputBuffer.getChannelData(0);
+                const pcmData = new Int16Array(inputData.length);
+                
+                for (let i = 0; i < inputData.length; i++) {
+                    pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+                }
+                
+                if (this.ws?.readyState === WebSocket.OPEN) {
+                    const base64data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
+                    this.ws.send(JSON.stringify({
+                        type: 'audio_data',
+                        audio: base64data
+                    }));
+                }
+            };
+            
+            console.log('Audio recording started');
+            
+        } catch (error) {
+            console.error('Failed to start recording:', error);
+            this.isRecording = false;
+        }
+    }
+
+    async stopListening() {
+        console.log('Stopping audio recording...');
+        this.isRecording = false;
+        
+        if (this.mediaStream) {
+            this.mediaStream.getTracks().forEach(track => track.stop());
+        }
+        
+        if (this.audioContext) {
+            await this.audioContext.close();
+        }
+        
+        this.audioContext = null;
+        this.processor = null;
+        this.mediaStream = null;
+    }
+
+    async handleServerResponse(response) {
+        console.log('Server response:', response);
+        
+        switch (response.type) {
+            case 'speech_recognized':
+                if (response.result?.text) {
+                    // Only store transcripts when we're actually listening
+                    if (this.currentState === this.states.LISTENING || 
+                        this.currentState === this.states.CONFIRMING) {
+                        this.lastTranscript = response.result.text;
+                    }
+                }
+                break;
+                
+            case 'silence_detected':
+                // Only handle silence in LISTENING state
+                if (this.currentState === this.states.LISTENING && this.lastTranscript) {
+                    console.log('Silence detected, moving to confirmation');
+                    console.log('Final transcript:', this.lastTranscript);
+                    await this.setState(this.states.CONFIRMING);
+                    await this.speak("Would you like to add anything else?");
+                }
+                break;
+        }
+    }
+
+    getEmotionForState() {
+        const emotions = {
+            [this.states.SPEAKING]: 'interest',
+            [this.states.TRANSITIONING]: 'anticipation', // Add emotion for transition
+            [this.states.LISTENING]: 'anticipation',
+            [this.states.CONFIRMING]: 'trust',
+            [this.states.PROCESSING]: 'anticipation',
+            [this.states.IDLE]: 'default'
+        };
+        return emotions[this.currentState] || 'default';
+    }
+
+
+    getEmotionForState() {
+        const emotions = {
+            [this.states.SPEAKING]: 'interest',
+            [this.states.LISTENING]: 'anticipation',
+            [this.states.CONFIRMING]: 'trust',
+            [this.states.IDLE]: 'default'
+        };
+        return emotions[this.currentState] || 'default';
+    }
+
+    async speak(text) {
+        return new Promise((resolve) => {
+            if (!this.mistyWorker) {
+                resolve();
+                return;
+            }
+
+            const handleSpeechComplete = async (event) => {
+                if (event.data.type === 'AUDIO_COMPLETE') {
+                    console.log("Speech complete");
+                    this.mistyWorker.removeEventListener('message', handleSpeechComplete);
+                    
+                    // First transition to buffer state
+                    await this.setState(this.states.TRANSITIONING);
+                    
+                    // Wait for audio system to stabilize
+                    setTimeout(async () => {
+                        if (this.currentState !== this.states.IDLE) {
+                            await this.setState(this.states.LISTENING);
+                        }
+                        resolve();
+                    }, 1500); // Longer delay for stability
+                }
+            };
+
+            this.mistyWorker.addEventListener('message', handleSpeechComplete);
+            
+            // Set speaking state before actually speaking
+            this.setState(this.states.SPEAKING);
+            
+            this.mistyWorker.postMessage({
+                payload: {
+                    endpoint: this.mistyIP,
+                    type: 'SPEAK',
+                    text: text,
+                    emotion: this.getEmotionForState(),
+                    activity: 'speak'
+                }
+            });
+        });
+    }
+}
+
 
 (function($) {
 
-    
     // @TODO replace with server url in production
     var SERVER_URL = 'http://localhost:8000';
     
@@ -14,6 +264,7 @@ import { credentials as GOOGLE_CREDENTIALS } from './google_creds.js';
     let isReadyToRecord = false;
     let recordingFilename;
     let mistyWorker;
+    let conversationManager;
     let isReadyInstructionPlayed = false;
     let studentDB = {};  
     $.getJSON('./studentDB.json', function(data) {
@@ -604,36 +855,6 @@ import { credentials as GOOGLE_CREDENTIALS } from './google_creds.js';
         // $(document).on('click', '#comment-input[data-play="1"] #play', function() {
         //     say($(this).parent().children('textarea').val().trim());
         // });
-
-        
-     
-        // $(document).on('click', '.cp', function() {
-        //     var commentId = $(this).attr('id').trim();
-        //     var commentText = $(this).attr('data-comment').trim();
-        //     // var commentEmotion = $(this).attr('data-emotion').trim();
-        //     var commentEmotion = $('#selected-emotion > p').text().trim().toLowerCase();
-            
-        //     // Log or display the clicked comment and its emotion
-        //     console.log('Comment ID:', commentId, 'Text:', commentText, 'Emotion:', commentEmotion);
-        
-        //     // Use the same send logic as in your play button click handler
-        //     var activity = 'play';
-        //     var type = 'SPEAK';
-        
-        //     if (mistyWorker) {
-        //         mistyWorker.postMessage({
-        //             payload: {
-        //                 endpoint: misty_IP,
-        //                 type: type,
-        //                 text: commentText,
-        //                 emotion: commentEmotion,
-        //                 activity: activity
-        //             }
-        //         });
-        //     } else {
-        //         console.error('Worker not initialized');
-        //     }
-        // });
         
         function startLaptopRecording() {
             navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
@@ -662,57 +883,71 @@ import { credentials as GOOGLE_CREDENTIALS } from './google_creds.js';
         }
 
     // Click event for a comment pin
-    $(document).on('click', '.cp', function() {
-        currentCommentId = $(this).attr('id').trim();
-        const commentText = $(this).attr('data-comment').trim();
-        const commentEmotion = $('#selected-emotion > p').text().trim().toLowerCase();
+    // $(document).on('click', '.cp', function() {
+    //     currentCommentId = $(this).attr('id').trim();
+    //     const commentText = $(this).attr('data-comment').trim();
+    //     const commentEmotion = $('#selected-emotion > p').text().trim().toLowerCase();
     
-        console.log('Comment ID:', currentCommentId, 'Text:', commentText, 'Emotion:', commentEmotion);
+    //     console.log('Comment ID:', currentCommentId, 'Text:', commentText, 'Emotion:', commentEmotion);
     
-        // Check if there is already a recording for this comment
-        const recordingForComment = getRecordingForComment(currentCommentId);
+    //     // Check if there is already a recording for this comment
+    //     const recordingForComment = getRecordingForComment(currentCommentId);
     
-        if (mistyWorker) {
-            if (recordingForComment) {
-                // If a recording exists, inform the user about re-recording
-                var speechText = "It seems we did this one already. Press my left bumper to rerecord.";
-                mistyWorker.postMessage({
-                    payload: {
-                        endpoint: misty_IP,
-                        type: 'SPEAK',
-                        text: speechText,
-                        emotion: 'neutral',
-                        activity: 'inform'
-                    }
-                });
+    //     if (mistyWorker) {
+    //         if (recordingForComment) {
+    //             // If a recording exists, inform the user about re-recording
+    //             var speechText = "It seems we did this one already. Press my left bumper to rerecord.";
+    //             mistyWorker.postMessage({
+    //                 payload: {
+    //                     endpoint: misty_IP,
+    //                     type: 'SPEAK',
+    //                     text: speechText,
+    //                     emotion: 'neutral',
+    //                     activity: 'inform'
+    //                 }
+    //             });
     
-                // Set flag to allow re-recording
-                isReadyInstructionPlayed = true;
-                isReadyToRecord = true;  // Bumpers will now listen for re-recording
+    //             // Set flag to allow re-recording
+    //             isReadyInstructionPlayed = true;
+    //             isReadyToRecord = true;  // Bumpers will now listen for re-recording
     
-            } else {
-                // If no recording exists, proceed with the usual "I am ready to record" message
-                mistyWorker.postMessage({
-                    payload: {
-                        endpoint: misty_IP,
-                        type: 'SPEAK',
-                        text: commentText,
-                        emotion: commentEmotion,
-                        activity: 'play'
-                    }
-                });
+    //         } else {
+    //             // If no recording exists, proceed with the usual "I am ready to record" message
+    //             mistyWorker.postMessage({
+    //                 payload: {
+    //                     endpoint: misty_IP,
+    //                     type: 'SPEAK',
+    //                     text: commentText,
+    //                     emotion: commentEmotion,
+    //                     activity: 'play'
+    //                 }
+    //             });
 
                
     
-                // Reset the flag and wait for the "I am ready to record" instruction
-                isReadyInstructionPlayed = false;
-                isReadyToRecord = false;
-            }
-        } else {
-            console.error('Worker not initialized');
-        }
-    });
+    //             // Reset the flag and wait for the "I am ready to record" instruction
+    //             isReadyInstructionPlayed = false;
+    //             isReadyToRecord = false;
+    //         }
+    //     } else {
+    //         console.error('Worker not initialized');
+    //     }
+    // });
 
+    $(document).on('click', '.cp', function() {
+        if (!window.conversationManager) {
+            console.error('Conversation manager not initialized');
+            return;
+        }
+    
+        const commentId = $(this).attr('id').trim();
+        const commentText = $(this).attr('data-comment').trim();
+        const commentEmotion = $('#selected-emotion > p').text().trim().toLowerCase();
+        
+        console.log('Starting conversation:', { commentId, commentText, commentEmotion });
+        
+        window.conversationManager.beginConversation(commentId, commentText, commentEmotion);
+    });
 
     
         $(document).on('click', '#comment-input[data-play="1"] #play', function() {
@@ -908,23 +1143,37 @@ import { credentials as GOOGLE_CREDENTIALS } from './google_creds.js';
         }
     }
 
+
     function initWorker() {
-        mistyWorker = new Worker("/assets/mistyWorker.js");
-
-    mistyWorker.postMessage({
-        credentials: GOOGLE_CREDENTIALS,  // Send Google credentials
-        behaviorsData: behaviors,         // Send behaviors data
-        payload: {
-            endpoint: misty_IP,
-            type: 'CONNECT',  
-            text: 'Hello',
-            emotion: 'joy',
-            activity: 'hi'
+        console.log("Initializing worker...");
+        try {
+            const workerPath = "/PATHWiSE/assets/mistyWorker.js";
+            mistyWorker = new Worker(workerPath);
+            
+            mistyWorker.onerror = (error) => {
+                console.error("Worker error:", error);
+            };
+    
+            // Initial connection to Misty
+            mistyWorker.postMessage({
+                credentials: GOOGLE_CREDENTIALS,
+                behaviorsData: behaviors,
+                payload: {
+                    endpoint: misty_IP,
+                    type: 'CONNECT'
+                }
+            });
+    
+            mistyWorker.onmessage = handleWorkerMessage;
+            
+            // Initialize conversation manager as a global variable
+            window.conversationManager = new ConversationManager(mistyWorker, misty_IP);
+            
+        } catch (error) {
+            console.error("Worker initialization failed:", error);
         }
-    });
-
-    mistyWorker.onmessage = handleWorkerMessage;
-}
+    }
+    
 
 function handleBumpSensor(bumpSensor) {
     if (isReadyToRecord && bumpSensor === 'LeftBumper') {
@@ -995,59 +1244,107 @@ function saveRecordingForComment(commentId, filename) {
 }
 
 
-function handleWorkerMessage(event) {
-    const { success, data, type, audioFilename, sensor } = event.data;
+// function handleWorkerMessage(event) {
+//     const { success, data, type, audioFilename, sensor } = event.data;
 
-    if (success) {
-        if (type === 'AUDIO_COMPLETE') {
-            if(recordingMode==='laptop'){
+//     if (success) {
+//         if (type === 'AUDIO_COMPLETE') {
+//             if(recordingMode==='laptop'){
+//                 return;
+//             }
+
+//             if (!isReadyInstructionPlayed) {
+//                 // If there was no existing recording, play the "I am ready to record" message
+//                 setTimeout(() => {
+//                     var speechText = "I am ready to record. Press my left bumper to start recording.";
+//                     mistyWorker.postMessage({
+//                         payload: {
+//                             endpoint: misty_IP,
+//                             type: 'SPEAK',
+//                             text: speechText,
+//                             emotion: 'neutral',
+//                             activity: 'inform'
+//                         }
+//                     });
+
+//                     isReadyInstructionPlayed = true;
+//                     isReadyToRecord = true;  // Bumpers will now listen after this message
+//                     console.log("Bumpers are now listening.");
+//                 }, 3000);
+//             } else {
+//                 isReadyToRecord = true;  // Bumpers listen after the final message
+//             }
+//         } else if (type === 'RECORDING_STARTED') {
+//             console.log(`Recording started: ${audioFilename}`);
+//             recordingFilename = audioFilename;
+//         } else if (type === 'RECORDING_STOPPED') {
+//             console.log('Recording stopped');
+//             saveRecordingForComment(currentCommentId, recordingFilename);
+
+//             // After recording stops, provide instructions for re-recording or playback
+//             const speechText = "If you want to record again, press my left bumper. If you want to play the recording, press my right bumper.";
+//             mistyWorker.postMessage({
+//                 payload: {
+//                     endpoint: misty_IP,
+//                     type: 'SPEAK',
+//                     text: speechText,
+//                     emotion: 'neutral',
+//                     activity: 'inform'
+//                 }
+//             });
+
+//             isReadyToRecord = false;  // Temporarily disable bumpers
+//         } else if (type === 'BUMP_SENSOR') {
+//             handleBumpSensor(sensor);  // Handle bumper interaction
+//         }
+//     }
+// }
+
+function handleWorkerMessage(event) {
+    console.log("Worker message received:", event.data);
+    const { success, data, type, audioFilename } = event.data;
+
+    if (!success) {
+        console.error("Worker message indicated failure:", event.data);
+        return;
+    }
+
+    console.log("Processing message type:", type);
+
+    switch (type) {
+        case 'AUDIO_COMPLETE':
+            console.log("Audio complete received");
+            if (recordingMode === 'laptop') {
                 return;
             }
 
-            if (!isReadyInstructionPlayed) {
-                // If there was no existing recording, play the "I am ready to record" message
-                setTimeout(() => {
-                    var speechText = "I am ready to record. Press my left bumper to start recording.";
-                    mistyWorker.postMessage({
-                        payload: {
-                            endpoint: misty_IP,
-                            type: 'SPEAK',
-                            text: speechText,
-                            emotion: 'neutral',
-                            activity: 'inform'
-                        }
-                    });
-
-                    isReadyInstructionPlayed = true;
-                    isReadyToRecord = true;  // Bumpers will now listen after this message
-                    console.log("Bumpers are now listening.");
-                }, 3000);
-            } else {
-                isReadyToRecord = true;  // Bumpers listen after the final message
+            if (conversationManager && 
+                conversationManager.currentState === conversationManager.states.SPEAKING) {
+                console.log('Misty finished speaking, starting to listen...');
+                conversationManager.startListening();
             }
-        } else if (type === 'RECORDING_STARTED') {
-            console.log(`Recording started: ${audioFilename}`);
-            recordingFilename = audioFilename;
-        } else if (type === 'RECORDING_STOPPED') {
-            console.log('Recording stopped');
-            saveRecordingForComment(currentCommentId, recordingFilename);
+            break;
 
-            // After recording stops, provide instructions for re-recording or playback
-            const speechText = "If you want to record again, press my left bumper. If you want to play the recording, press my right bumper.";
-            mistyWorker.postMessage({
-                payload: {
-                    endpoint: misty_IP,
-                    type: 'SPEAK',
-                    text: speechText,
-                    emotion: 'neutral',
-                    activity: 'inform'
-                }
-            });
+        case 'BEHAVIOR':
+        case 'SPEAK':
+            // These are expected messages, no special handling needed
+            console.log(`${type} action completed`);
+            break;
 
-            isReadyToRecord = false;  // Temporarily disable bumpers
-        } else if (type === 'BUMP_SENSOR') {
-            handleBumpSensor(sensor);  // Handle bumper interaction
-        }
+        case 'AUDIO_DELETED':
+            console.log(`Successfully deleted audio file: ${audioFilename}`);
+            break;
+
+        case 'ERROR':
+            console.error('Error from Misty Worker:', data);
+            if (conversationManager) {
+                conversationManager.resetState();
+            }
+            break;
+
+        default:
+            console.log('Unhandled message type:', type);
+            break;
     }
 }
 
@@ -1324,25 +1621,52 @@ function handleWorkerMessage(event) {
 
     var prevEmotQueryText = "";
 
-    function refreshEmotion() {
-        comment_text = $('#comment-input textarea').val().trim();
-        if (comment_text == '') {
-            emotion = 'anticipation'
+    // function refreshEmotion() {
+    //     comment_text = $('#comment-input textarea').val().trim();
+    //     if (comment_text == '') {
+    //         emotion = 'anticipation'
+    //         $(document).find('#selected-emotion > ul li[data-id="' + getEmotionId(emotion) + '"]').click();
+    //     } else if (comment_text != prevEmotQueryText) {
+    //         // console.log('fetching new emotion')
+    //         var old_class = $('#robot-emotions').attr('class');
+    //         $('#robot-emotions').attr('class', 'blink');
+    //         fetchEmotion(comment_text, function(emotion) {
+    //             if (emotion == null) {
+    //                 emotion = 'anticipation';
+    //             }
+    //             $(document).find('#selected-emotion > ul li[data-id="' + getEmotionId(emotion) + '"]').click();
+    //             prevEmotQueryText = comment_text;
+    //         }, function() {
+    //             $('#robot-emotions').attr('class', old_class);
+    //         })
+    //     }
+    // }
+
+    var prevEmotQueryText = "";
+
+function refreshEmotion() {
+    // Get the comment text safely
+    var comment_text = $('#comment-input textarea').val() || "";
+    comment_text = comment_text.trim();
+
+    if (comment_text === '') {
+        emotion = 'anticipation';
+        $(document).find('#selected-emotion > ul li[data-id="' + getEmotionId(emotion) + '"]').click();
+    } else if (comment_text !== prevEmotQueryText) {
+        console.log('Fetching emotion for:', comment_text);
+        var old_class = $('#robot-emotions').attr('class');
+        $('#robot-emotions').attr('class', 'blink');
+        
+        fetchEmotion(comment_text, function(emotion) {
+            if (emotion == null) {
+                emotion = 'anticipation';
+            }
             $(document).find('#selected-emotion > ul li[data-id="' + getEmotionId(emotion) + '"]').click();
-        } else if (comment_text != prevEmotQueryText) {
-            // console.log('fetching new emotion')
-            var old_class = $('#robot-emotions').attr('class');
-            $('#robot-emotions').attr('class', 'blink');
-            fetchEmotion(comment_text, function(emotion) {
-                if (emotion == null) {
-                    emotion = 'anticipation';
-                }
-                $(document).find('#selected-emotion > ul li[data-id="' + getEmotionId(emotion) + '"]').click();
-                prevEmotQueryText = comment_text;
-            }, function() {
-                $('#robot-emotions').attr('class', old_class);
-            })
-        }
+            prevEmotQueryText = comment_text;
+        }, function() {
+            $('#robot-emotions').attr('class', old_class);
+        });
     }
+}
 
 })(window.jQuery);
