@@ -22,6 +22,9 @@ class ConversationManager {
         this.ws = null;
         this.setupWebSocket();
         this.isMistySpeaking = false;
+        this.noResponseTimeout = null;
+        this.noResponseDuration = 10000; // 10 seconds
+        this.fullRecording = [];
     }
 
     setupWebSocket() {
@@ -47,6 +50,7 @@ class ConversationManager {
         this.currentCommentId = commentId;
         await this.setState(this.states.SPEAKING);
         await this.speak(text);
+        await this.setState(this.states.LISTENING);
     }
 
     async setState(newState) {
@@ -70,7 +74,6 @@ class ConversationManager {
                 break;
         }
 
-        // Instead of sending a behavior call, just log the state change
         console.log(`Robot state changed to: ${this.currentState}`);
     }
 
@@ -98,12 +101,14 @@ class ConversationManager {
                 for (let i = 0; i < inputData.length; i++) {
                     pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
                 }
+                this.fullRecording.push(pcmData);
                 if (this.ws?.readyState === WebSocket.OPEN) {
                     const base64data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
                     this.ws.send(JSON.stringify({ type: 'audio_data', audio: base64data }));
                 }
             };
             console.log('Audio recording started');
+            this.startNoResponseTimer();
         } catch (error) {
             console.error('Failed to start recording:', error);
             this.isRecording = false;
@@ -113,6 +118,7 @@ class ConversationManager {
     async stopListening() {
         console.log('Stopping audio recording...');
         this.isRecording = false;
+        this.clearNoResponseTimer();
         if (this.mediaStream) {
             this.mediaStream.getTracks().forEach(track => track.stop());
         }
@@ -124,10 +130,29 @@ class ConversationManager {
         this.mediaStream = null;
     }
 
+    startNoResponseTimer() {
+        this.clearNoResponseTimer();
+        this.noResponseTimeout = setTimeout(() => {
+            this.handleNoResponse();
+        }, this.noResponseDuration);
+    }
+
+    clearNoResponseTimer() {
+        if (this.noResponseTimeout) {
+            clearTimeout(this.noResponseTimeout);
+            this.noResponseTimeout = null;
+        }
+    }
+
+    async handleNoResponse() {
+        console.log('No response detected');
+        await this.speak("It seems like nobody's here. Let me know when you're ready to continue.");
+        await this.setState(this.states.IDLE);
+    }
+
     async handleServerResponse(response) {
         console.log('Server response:', response);
         
-        // Ignore speech recognition and silence detection while Misty is speaking
         if (this.isMistySpeaking) {
             console.log('Ignoring audio input while Misty is speaking');
             return;
@@ -139,8 +164,10 @@ class ConversationManager {
                 break;
             case 'speech_recognized':
                 if (response.result?.text) {
+                    this.clearNoResponseTimer();
                     this.lastTranscript = response.result.text;
                     console.log('Recognized speech:', this.lastTranscript);
+                    this.startNoResponseTimer();
                 }
                 break;
             case 'silence_detected':
@@ -172,7 +199,6 @@ class ConversationManager {
                 resolve();
                 return;
             }
-
             const handleSpeechComplete = async (event) => {
                 if (event.data.type === 'AUDIO_COMPLETE') {
                     console.log("Speech complete");
@@ -187,7 +213,6 @@ class ConversationManager {
                     }, 1500);
                 }
             };
-
             this.mistyWorker.addEventListener('message', handleSpeechComplete);
             this.setState(this.states.SPEAKING);
             this.isMistySpeaking = true;
@@ -211,19 +236,26 @@ class ConversationManager {
                 break;
             case 'negative':
                 await this.speak("Alright! Finish up reading the next part. I can't wait to discuss!");
+                await this.saveRecording();
                 await this.setState(this.states.IDLE);
                 break;
             case 'uncertain':
-                await this.speak("Take your time. If you think of anything, just let me know. Otherwise, we can move on when you're ready.");
+                await this.speak("Okie Dokie! We'll move on when you're ready.");
                 await this.setState(this.states.CONFIRMING);
                 break;
         }
     }
 
     async confirmAdditionalInput() {
+        this.startNoResponseTimer();
         const userResponse = await this.waitForUserResponse();
-        if (this.ws?.readyState === WebSocket.OPEN) {
-            this.ws.send(JSON.stringify({ type: 'classify_intent', text: userResponse }));
+        this.clearNoResponseTimer();
+        if (userResponse) {
+            if (this.ws?.readyState === WebSocket.OPEN) {
+                this.ws.send(JSON.stringify({ type: 'classify_intent', text: userResponse }));
+            }
+        } else {
+            await this.handleNoResponse();
         }
     }
 
@@ -236,7 +268,64 @@ class ConversationManager {
                     this.lastTranscript = "";
                 }
             }, 100);
+
+            setTimeout(() => {
+                clearInterval(checkTranscript);
+                resolve(null);
+            }, this.noResponseDuration);
         });
+    }
+
+    async saveRecording() {
+        console.log('Saving full recording...');
+        const fullAudio = new Float32Array(this.fullRecording.reduce((acc, curr) => [...acc, ...curr], []));
+        const wavBlob = this.exportWAV(fullAudio);
+        const fileName = `recording_${Date.now()}.wav`;
+        
+        // Save the recording to a local folder
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(wavBlob);
+        link.download = `recordings/${fileName}`;
+        link.click();
+
+        this.fullRecording = []; // Clear the recording buffer
+    }
+
+    exportWAV(audioData) {
+        const buffer = new ArrayBuffer(44 + audioData.length * 2);
+        const view = new DataView(buffer);
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        const sampleRate = 16000;
+        const numChannels = 1;
+
+        writeString(view, 0, 'RIFF');
+        view.setUint32(4, 32 + audioData.length * 2, true);
+        writeString(view, 8, 'WAVE');
+        writeString(view, 12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, numChannels, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * numChannels * 2, true);
+        view.setUint16(32, numChannels * 2, true);
+        view.setUint16(34, 16, true);
+        writeString(view, 36, 'data');
+        view.setUint32(40, audioData.length * 2, true);
+
+        const volume = 1;
+        let index = 44;
+        for (let i = 0; i < audioData.length; i++) {
+            view.setInt16(index, audioData[i] * (0x7FFF * volume), true);
+            index += 2;
+        }
+
+        return new Blob([view], { type: 'audio/wav' });
     }
 }
 
