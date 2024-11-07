@@ -5,14 +5,13 @@ class ConversationManager {
     constructor(mistyWorker, mistyIP) {
         this.mistyWorker = mistyWorker;
         this.mistyIP = mistyIP;
-        // Add more granular states
         this.states = {
             IDLE: 'idle',
-            SPEAKING: 'speaking',          // Misty is speaking
-            TRANSITIONING: 'transitioning', // Buffer state between speaking and listening
-            LISTENING: 'listening',         // Actively listening for user response
-            CONFIRMING: 'confirming',       // Waiting for yes/no after asking for more
-            PROCESSING: 'processing'        // Processing user response
+            SPEAKING: 'speaking',
+            TRANSITIONING: 'transitioning',
+            LISTENING: 'listening',
+            CONFIRMING: 'confirming',
+            PROCESSING: 'processing'
         };
         this.currentState = this.states.IDLE;
         this.isRecording = false;
@@ -22,23 +21,21 @@ class ConversationManager {
         this.lastTranscript = "";
         this.ws = null;
         this.setupWebSocket();
+        this.isMistySpeaking = false;
     }
+
     setupWebSocket() {
         console.log('Setting up WebSocket connection...');
         this.ws = new WebSocket('ws://localhost:8765');
-        
         this.ws.onopen = () => {
             console.log('WebSocket connected');
         };
-        
         this.ws.onmessage = async (event) => {
             const response = JSON.parse(event.data);
             console.log('Server response:', response);
             await this.handleServerResponse(response);
         };
-        
         this.ws.onerror = (error) => console.error('WebSocket error:', error);
-        
         this.ws.onclose = () => {
             console.log('WebSocket closed, reconnecting...');
             setTimeout(() => this.setupWebSocket(), 5000);
@@ -48,11 +45,7 @@ class ConversationManager {
     async beginConversation(commentId, text, emotion) {
         console.log('Beginning conversation:', { commentId, text, emotion });
         this.currentCommentId = commentId;
-        
-        // First, switch to speaking state
         await this.setState(this.states.SPEAKING);
-        
-        // Have Misty speak the text
         await this.speak(text);
     }
 
@@ -60,39 +53,25 @@ class ConversationManager {
         console.log(`State transition: ${this.currentState} -> ${newState}`);
         this.currentState = newState;
 
-        // Handle state-specific actions
         switch (newState) {
             case this.states.SPEAKING:
-                await this.stopListening();  // Ensure we're not listening while speaking
+                await this.stopListening();
                 break;
-                
             case this.states.TRANSITIONING:
-                // Clear any lingering audio state
                 if (this.isRecording) {
                     await this.stopListening();
                 }
                 break;
-                
             case this.states.LISTENING:
                 await this.startListening();
                 break;
-                
             case this.states.IDLE:
                 await this.stopListening();
                 break;
         }
 
-        // Update Misty's behavior
-        if (this.mistyWorker) {
-            this.mistyWorker.postMessage({
-                payload: {
-                    endpoint: this.mistyIP,
-                    type: 'BEHAVIOR',
-                    emotion: this.getEmotionForState(),
-                    activity: this.currentState
-                }
-            });
-        }
+        // Instead of sending a behavior call, just log the state change
+        console.log(`Robot state changed to: ${this.currentState}`);
     }
 
     async startListening() {
@@ -100,43 +79,31 @@ class ConversationManager {
             console.log('Starting audio recording...');
             this.isRecording = true;
             this.lastTranscript = "";
-            
-            this.mediaStream = await navigator.mediaDevices.getUserMedia({ 
-                audio: { 
+            this.mediaStream = await navigator.mediaDevices.getUserMedia({
+                audio: {
                     echoCancellation: true,
                     noiseSuppression: true,
                     autoGainControl: true
                 }
             });
-            
             this.audioContext = new AudioContext({ sampleRate: 16000 });
             const source = this.audioContext.createMediaStreamSource(this.mediaStream);
             this.processor = this.audioContext.createScriptProcessor(4096, 1, 1);
-            
             source.connect(this.processor);
             this.processor.connect(this.audioContext.destination);
-            
             this.processor.onaudioprocess = (e) => {
                 if (!this.isRecording) return;
-                
                 const inputData = e.inputBuffer.getChannelData(0);
                 const pcmData = new Int16Array(inputData.length);
-                
                 for (let i = 0; i < inputData.length; i++) {
                     pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
                 }
-                
                 if (this.ws?.readyState === WebSocket.OPEN) {
                     const base64data = btoa(String.fromCharCode(...new Uint8Array(pcmData.buffer)));
-                    this.ws.send(JSON.stringify({
-                        type: 'audio_data',
-                        audio: base64data
-                    }));
+                    this.ws.send(JSON.stringify({ type: 'audio_data', audio: base64data }));
                 }
             };
-            
             console.log('Audio recording started');
-            
         } catch (error) {
             console.error('Failed to start recording:', error);
             this.isRecording = false;
@@ -146,15 +113,12 @@ class ConversationManager {
     async stopListening() {
         console.log('Stopping audio recording...');
         this.isRecording = false;
-        
         if (this.mediaStream) {
             this.mediaStream.getTracks().forEach(track => track.stop());
         }
-        
         if (this.audioContext) {
             await this.audioContext.close();
         }
-        
         this.audioContext = null;
         this.processor = null;
         this.mediaStream = null;
@@ -163,24 +127,28 @@ class ConversationManager {
     async handleServerResponse(response) {
         console.log('Server response:', response);
         
+        // Ignore speech recognition and silence detection while Misty is speaking
+        if (this.isMistySpeaking) {
+            console.log('Ignoring audio input while Misty is speaking');
+            return;
+        }
+
         switch (response.type) {
+            case 'intent_classification':
+                await this.handleIntentClassification(response.intent);
+                break;
             case 'speech_recognized':
                 if (response.result?.text) {
-                    // Only store transcripts when we're actually listening
-                    if (this.currentState === this.states.LISTENING || 
-                        this.currentState === this.states.CONFIRMING) {
-                        this.lastTranscript = response.result.text;
-                    }
+                    this.lastTranscript = response.result.text;
+                    console.log('Recognized speech:', this.lastTranscript);
                 }
                 break;
-                
             case 'silence_detected':
-                // Only handle silence in LISTENING state
                 if (this.currentState === this.states.LISTENING && this.lastTranscript) {
                     console.log('Silence detected, moving to confirmation');
-                    console.log('Final transcript:', this.lastTranscript);
                     await this.setState(this.states.CONFIRMING);
                     await this.speak("Would you like to add anything else?");
+                    await this.confirmAdditionalInput();
                 }
                 break;
         }
@@ -189,21 +157,10 @@ class ConversationManager {
     getEmotionForState() {
         const emotions = {
             [this.states.SPEAKING]: 'interest',
-            [this.states.TRANSITIONING]: 'anticipation', // Add emotion for transition
+            [this.states.TRANSITIONING]: 'anticipation',
             [this.states.LISTENING]: 'anticipation',
             [this.states.CONFIRMING]: 'trust',
             [this.states.PROCESSING]: 'anticipation',
-            [this.states.IDLE]: 'default'
-        };
-        return emotions[this.currentState] || 'default';
-    }
-
-
-    getEmotionForState() {
-        const emotions = {
-            [this.states.SPEAKING]: 'interest',
-            [this.states.LISTENING]: 'anticipation',
-            [this.states.CONFIRMING]: 'trust',
             [this.states.IDLE]: 'default'
         };
         return emotions[this.currentState] || 'default';
@@ -220,25 +177,20 @@ class ConversationManager {
                 if (event.data.type === 'AUDIO_COMPLETE') {
                     console.log("Speech complete");
                     this.mistyWorker.removeEventListener('message', handleSpeechComplete);
-                    
-                    // First transition to buffer state
+                    this.isMistySpeaking = false;
                     await this.setState(this.states.TRANSITIONING);
-                    
-                    // Wait for audio system to stabilize
                     setTimeout(async () => {
                         if (this.currentState !== this.states.IDLE) {
                             await this.setState(this.states.LISTENING);
                         }
                         resolve();
-                    }, 1500); // Longer delay for stability
+                    }, 1500);
                 }
             };
 
             this.mistyWorker.addEventListener('message', handleSpeechComplete);
-            
-            // Set speaking state before actually speaking
             this.setState(this.states.SPEAKING);
-            
+            this.isMistySpeaking = true;
             this.mistyWorker.postMessage({
                 payload: {
                     endpoint: this.mistyIP,
@@ -250,8 +202,43 @@ class ConversationManager {
             });
         });
     }
-}
 
+    async handleIntentClassification(intent) {
+        switch (intent) {
+            case 'positive':
+                await this.speak("Great! Go ahead and tell me what else you'd like to add.");
+                await this.setState(this.states.LISTENING);
+                break;
+            case 'negative':
+                await this.speak("Alright! Finish up reading the next part. I can't wait to discuss!");
+                await this.setState(this.states.IDLE);
+                break;
+            case 'uncertain':
+                await this.speak("Take your time. If you think of anything, just let me know. Otherwise, we can move on when you're ready.");
+                await this.setState(this.states.CONFIRMING);
+                break;
+        }
+    }
+
+    async confirmAdditionalInput() {
+        const userResponse = await this.waitForUserResponse();
+        if (this.ws?.readyState === WebSocket.OPEN) {
+            this.ws.send(JSON.stringify({ type: 'classify_intent', text: userResponse }));
+        }
+    }
+
+    async waitForUserResponse() {
+        return new Promise((resolve) => {
+            const checkTranscript = setInterval(() => {
+                if (this.lastTranscript) {
+                    clearInterval(checkTranscript);
+                    resolve(this.lastTranscript);
+                    this.lastTranscript = "";
+                }
+            }, 100);
+        });
+    }
+}
 
 (function($) {
 
